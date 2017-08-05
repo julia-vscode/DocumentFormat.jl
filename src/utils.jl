@@ -77,7 +77,7 @@ function is_multi_line(x::EXPR, F::FormatState)
 end
 
 function check_indent(F)
-    target_indent = (4*F.indent)
+    target_indent = (F.config.IndentWidth*F.indent)
     lr = F.line_ranges[find_line(F.offset + 1, F.line_ranges)]
     line = F.content[lr]
     if !startswith(line, " "^target_indent)
@@ -86,6 +86,27 @@ function check_indent(F)
     elseif length(line) > target_indent && line[target_indent + 1] == ' '
         i = findfirst(x -> x != ' ', line) - 1
         push!(F.diagnostics, Diagnostic("Removing indent", [Deletion(first(lr) - 1 + (1:(i - target_indent)))]))
+    end
+end
+
+function strip_empty_line_ends(F)
+    for li in F.line_ranges
+        line = F.content[li]
+        if endswith(line, " ")
+            nws = 2
+            while endswith(line, " "^nws)
+                nws += 1
+            end
+            nws -= 1
+            push!(F.diagnostics, Diagnostic("Removing empty spaces at end of line ", [Deletion(last(li) + 1 + (-nws:0))]))
+        elseif endswith(line, " \n")
+            nws = 2
+            while endswith(line, string(" "^nws, "\n"))
+                nws += 1
+            end
+            nws -= 2
+            push!(F.diagnostics, Diagnostic("Removing empty spaces at end of line ", [Deletion(last(li) + (-nws:-1))]))
+        end
     end
 end
 

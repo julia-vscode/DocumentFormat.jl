@@ -14,9 +14,13 @@ end
 const WHITESPACE = [' ', '\t', '\n']
 
 Base.@kwdef struct FormatConfig
+    # Indents
     IndentWidth::Int = 4
     UseTab::Bool = false
     TabWidth::Int = 4
+    IndentEXPR::Union = Union{cst.Begin,cst.Quote,cst.For,cst.While,cst.FunctionDef,cst.Macro,cst.Struct,cst.Let,cst.Try,cst.If}
+    # Misc
+    StripLineEnds::Bool = true
     AlignAfterOpenBracket::Options.AlignAfterOpenBracket = Options.Align
 end
 
@@ -91,6 +95,6 @@ function parse_format_settings(file::AbstractString)
             settingoption[setting] = option
         end
     end
-    FormatConfig(;settingoption...)   
+    FormatConfig(;settingoption...)
 end
 

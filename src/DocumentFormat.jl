@@ -8,6 +8,9 @@ import CSTParser: trailing_ws_length, precedence
 export format
 const cst = CSTParser
 
+include("options.jl")
+include("formatconfig.jl")
+
 struct TextEdit
     range::UnitRange{Int}
     text::String
@@ -25,19 +28,21 @@ mutable struct FormatState
     diagnostics::Vector{Diagnostic}
     line_ranges::Vector{UnitRange{Int}}
     indent::Int
+    config::FormatConfig
 end
-FormatState(str) = FormatState(str, 0, [], get_line_ranges(str), 0)
+FormatState(str) = FormatState(str, 0, [], get_line_ranges(str), 0, FormatConfig())
 
-include("options.jl")
-include("formatconfig.jl")
+
+
 include("operators.jl")
 include("indents.jl")
 include("utils.jl")
 
 function format(str::String)
-    x = CSTParser.parse(str)
+    x = CSTParser.parse(str, true)
     F = FormatState(str)
     format(x, F)
+    F.config.StripLineEnds && strip_empty_line_ends(F)
     apply(str, F)
 end
 
