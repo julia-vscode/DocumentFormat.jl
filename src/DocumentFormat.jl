@@ -43,6 +43,7 @@ function format(str::String)
     F = FormatState(str)
     format(x, F)
     F.config.StripLineEnds && strip_empty_line_ends(F)
+    F.config.NewLineEOF && end_file_newline(F)
     apply(str, F)
 end
 

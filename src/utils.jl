@@ -110,3 +110,8 @@ function strip_empty_line_ends(F)
     end
 end
 
+function end_file_newline(F::FormatState)
+    if last(F.content) != '\n'
+        push!(F.diagnostics, Diagnostic("Add newline at end of file", [TextEdit(length(F.content) + (1:0),"\n")]))
+    end
+end
