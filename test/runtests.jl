@@ -115,3 +115,5 @@ end
     end
 end
 end
+
+include("test_formatconfig.jl")

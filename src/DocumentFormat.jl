@@ -28,6 +28,8 @@ mutable struct FormatState
 end
 FormatState(str) = FormatState(str, 0, [], get_line_ranges(str), 0)
 
+include("options.jl")
+include("formatconfig.jl")
 include("operators.jl")
 include("indents.jl")
 include("utils.jl")
