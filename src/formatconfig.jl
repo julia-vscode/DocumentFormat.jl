@@ -17,7 +17,7 @@ Base.@kwdef struct FormatConfig
     IndentWidth::Int = 4
     UseTab::Bool = false
     TabWidth::Int = 4
-    AlignAfterOpenBracket::Options.AlignAfterOpenBracket=Options.Align
+    AlignAfterOpenBracket::Options.AlignAfterOpenBracket = Options.Align
 end
 
 const __config_settings_docstr = let
