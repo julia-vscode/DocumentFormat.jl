@@ -21,15 +21,19 @@ Base.@kwdef struct FormatConfig
 end
 
 const __config_settings_docstr = let
+    default_config = FormatConfig()
     io = IOBuffer()
     sortperm_fields = sortperm(fieldnames(FormatConfig))
     for i in sortperm_fields
         setting, typ = fieldnames(FormatConfig)[i], FormatConfig.types[i]
-        print(io, " * `", setting)
+        default_value = getfield(default_config, setting)
+        print(io, " * `", setting, "` : ")
         if supertype(typ) <: Enum
-            println(io, "` = "join("`" .* sort(collect(string.(instances(typ)))) .* "`", ", "))
+            instances(typ)
+            f(x) = (x == default_value ? "\e[1m" * string(x) * "\e[22m" : string(x))
+            println(io, join("`" .* sort(collect(f.(instances(typ)))) .* "`", ", "))
         else
-            println(io, "::", typ, "`")
+            println(io, "`", default_value, "`")
         end
     end
     String(take!(io))
@@ -52,7 +56,7 @@ TabWidth = 4
 AlignAfterOpenBracket = Align
 ```
 
-All the available settings and corresponding possible values or types are:
+All the available settings and corresponding possible values (default value in bold):
 
 $(__config_settings_docstr)
 """
