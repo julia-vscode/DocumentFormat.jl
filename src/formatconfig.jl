@@ -21,7 +21,7 @@ Base.@kwdef struct FormatConfig
     IndentEXPR::Union = Union{cst.Begin,cst.Quote,cst.For,cst.While,cst.FunctionDef,cst.Macro,cst.Struct,cst.Let,cst.Try,cst.If}
     # Misc
     StripLineEnds::Bool = true
-    NewLineEOF::Bool = true
+    NewLineEOF::Bool = false
     AlignAfterOpenBracket::Options.AlignAfterOpenBracket = Options.Align
 end
 
