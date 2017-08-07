@@ -18,7 +18,7 @@ Base.@kwdef struct FormatConfig
     IndentWidth::Int = 4
     UseTab::Bool = false
     TabWidth::Int = 4
-    IndentEXPR::Vector = [cst.Begin,cst.Quote,cst.For,cst.While,cst.FunctionDef,cst.Macro,cst.Struct,cst.Let,cst.Try,cst.If]
+    IndentEXPR::Vector = [cst.Begin,cst.Quote,cst.For,cst.While,cst.FunctionDef,cst.Macro,cst.Struct,cst.Let,cst.Try,cst.If,cst.Mutable]
     # Misc
     StripLineEnds::Bool = true
     NewLineEOF::Bool = false

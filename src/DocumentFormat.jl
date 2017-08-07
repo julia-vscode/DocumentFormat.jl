@@ -47,17 +47,11 @@ function format(str::String)
     apply(str, F)
 end
 
-function format(x::EXPR{T}, F::FormatState) where T
-    if T <: IndentEXPR
-        indent(F)
-    end
+function format(x::EXPR, F::FormatState)
     for a in x.args
         offset = F.offset
         format(a, F)
         F.offset = offset + a.fullspan
-    end
-    if T <: IndentEXPR
-        deindent(F)
     end
 end
 

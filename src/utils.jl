@@ -115,3 +115,5 @@ function end_file_newline(F::FormatState)
         push!(F.diagnostics, Diagnostic("Add newline at end of file", [TextEdit(length(F.content) + (1:0),"\n")]))
     end
 end
+
+isnestedifblock(x::EXPR{cst.Block}) = length(x.args) == 1 && x.args[1] isa EXPR{cst.If} && !(x.args[1].args[1] isa EXPR{cst.KEYWORD{Tokens.IF}})
