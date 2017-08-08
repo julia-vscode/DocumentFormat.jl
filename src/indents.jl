@@ -36,7 +36,7 @@ function format(x::EXPR{cst.For}, F::FormatState)
     doindent = is_multi_line(x, F) && cst.For in F.config.IndentEXPR
     
     offset = F.offset
-    F.offset = x.args[1].fullspan
+    F.offset += x.args[1].fullspan
     format(x.args[2], F)
     F.offset = offset + x.args[1].fullspan + x.args[2].fullspan
 

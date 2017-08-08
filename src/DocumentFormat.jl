@@ -76,11 +76,14 @@ function format(x::EXPR{cst.Curly}, F::FormatState)
         offset = F.offset
         if a isa EXPR{PUNCTUATION{Tokens.LPAREN}} || (i == nargs - 1 && !(x.args[i] isa EXPR{PUNCTUATION{Tokens.COMMA}}))
             no_trailing_ws(a, F)
+            F.offset = offset + a.fullspan
         elseif i < nargs 
             no_trailing_ws(a, F)
             format(a, F)
+            F.offset = offset + a.fullspan
+        else
+            F.offset = offset + a.fullspan
         end
-        F.offset = offset + a.fullspan
     end
 end
 
@@ -90,11 +93,12 @@ function format(x::EXPR{cst.Call}, F::FormatState)
         offset = F.offset
         if a isa EXPR{PUNCTUATION{Tokens.COMMA}} 
             trailing_ws(a, F)
+            F.offset = offset + a.fullspan
         else
             i < nargs && !(x.args[i+1] isa EXPR{cst.Parameters}) && no_trailing_ws(a, F)
             format(a, F)
+            F.offset = offset + a.fullspan
         end
-        F.offset = offset + a.fullspan
     end
 end
 
