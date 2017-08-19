@@ -57,11 +57,24 @@ function format(x::EXPR{CSTParser.ConditionalOpCall}, F::FormatState)
     end
 end
 
+# NEEDS FIX: if not bracketed, turn off op-ws format for arguments
 function format(x::EXPR{CSTParser.ColonOpCall}, F::FormatState)
     for (i, a) in enumerate(x.args)
         offset = F.offset
         i != 5 && no_trailing_ws(a, F)
-        if iseven(i)
+        if isodd(i)
+            format(a, F)
+        end
+        F.offset = offset + a.fullspan
+    end
+end
+
+function format(x::EXPR{T}, F::FormatState) where T <: Union{CSTParser.ChainOpCall,CSTParser.Comparison}
+    nargs = length(x.args)
+    for (i, a) in enumerate(x.args)
+        offset = F.offset
+        i != nargs && trailing_ws(a, F)
+        if isodd(i)
             format(a, F)
         end
         F.offset = offset + a.fullspan

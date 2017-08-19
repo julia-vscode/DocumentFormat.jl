@@ -23,22 +23,22 @@ function apply(str, F::FormatState)
     str1
 end
 
-# returns a vector of ranges in terms of characters (not bytes)
+# returns a vector of ranges in terms of bytes
 function get_line_ranges(str::String)
     line_ranges = UnitRange{Int}[]
     i = search(str, '\n')
-    n = length(str)
+    n = sizeof(str)
     if i == 0
-        push!(line_ranges, 1:length(str))
+        push!(line_ranges, 1:sizeof(str))
     else
-        push!(line_ranges, 1:ind2chr(str, i))
+        push!(line_ranges, 1:i)
         while i < n
             i1 = search(str, '\n', i + 1)
             if i1 == 0
-                push!(line_ranges, ind2chr(str, i + 1):length(str))
+                push!(line_ranges, i + 1:sizeof(str))
                 break
             else
-                push!(line_ranges, ind2chr(str, i + 1):ind2chr(str, i1 ))
+                push!(line_ranges, i + 1:i1)
                 i = i1
             end
         end
@@ -115,3 +115,5 @@ function end_file_newline(F::FormatState)
         push!(F.diagnostics, Diagnostic("Add newline at end of file", [TextEdit(length(F.content) + (1:0),"\n")]))
     end
 end
+
+isnestedifblock(x::EXPR{cst.Block}) = length(x.args) == 1 && x.args[1] isa EXPR{cst.If} && !(x.args[1].args[1] isa EXPR{cst.KEYWORD{Tokens.IF}})

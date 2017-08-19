@@ -47,6 +47,7 @@ function format(str::String, config = FormatConfig())
     apply(str, F)
 end
 
+
 """
     formatpkg(pkg::String; kwargs...)
 
@@ -151,17 +152,12 @@ function formatpkg(pkg::String; configpath=nothing, force=false)
 end
     
 
-function format(x::EXPR{T}, F::FormatState) where T
-    if T <: IndentEXPR
-        indent(F)
-    end
+
+function format(x::EXPR, F::FormatState)
     for a in x.args
         offset = F.offset
         format(a, F)
         F.offset = offset + a.fullspan
-    end
-    if T <: IndentEXPR
-        deindent(F)
     end
 end
 
@@ -186,11 +182,14 @@ function format(x::EXPR{cst.Curly}, F::FormatState)
         offset = F.offset
         if a isa EXPR{PUNCTUATION{Tokens.LPAREN}} || (i == nargs - 1 && !(x.args[i] isa EXPR{PUNCTUATION{Tokens.COMMA}}))
             no_trailing_ws(a, F)
+            F.offset = offset + a.fullspan
         elseif i < nargs 
             no_trailing_ws(a, F)
             format(a, F)
+            F.offset = offset + a.fullspan
+        else
+            F.offset = offset + a.fullspan
         end
-        F.offset = offset + a.fullspan
     end
 end
 
@@ -200,11 +199,12 @@ function format(x::EXPR{cst.Call}, F::FormatState)
         offset = F.offset
         if a isa EXPR{PUNCTUATION{Tokens.COMMA}} 
             trailing_ws(a, F)
+            F.offset = offset + a.fullspan
         else
             i < nargs && !(x.args[i+1] isa EXPR{cst.Parameters}) && no_trailing_ws(a, F)
             format(a, F)
+            F.offset = offset + a.fullspan
         end
-        F.offset = offset + a.fullspan
     end
 end
 

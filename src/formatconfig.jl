@@ -18,10 +18,10 @@ Base.@kwdef struct FormatConfig
     IndentWidth::Int = 4
     UseTab::Bool = false
     TabWidth::Int = 4
-    IndentEXPR::Union = Union{cst.Begin,cst.Quote,cst.For,cst.While,cst.FunctionDef,cst.Macro,cst.Struct,cst.Let,cst.Try,cst.If}
+    IndentEXPR::Vector = [cst.Begin,cst.Quote,cst.For,cst.While,cst.FunctionDef,cst.Macro,cst.Struct,cst.Let,cst.Try,cst.If,cst.Mutable]
     # Misc
     StripLineEnds::Bool = true
-    NewLineEOF::Bool = true
+    NewLineEOF::Bool = false
     AlignAfterOpenBracket::Options.AlignAfterOpenBracket = Options.Align
 end
 
