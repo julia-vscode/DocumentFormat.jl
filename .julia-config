@@ -1,0 +1,4 @@
+# .julia-config for the DocumentFormat package
+IndentWidth = 4
+UseTab = false
+AlignAfterOpenBracket = Align

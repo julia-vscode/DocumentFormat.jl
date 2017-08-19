@@ -1,8 +1,5 @@
-using DocumentFormat.format
+using DocumentFormat: format, formatpkg
 using Base.Test
-
-
-# write your own tests here
 
 @testset "All" begin
 @testset "basic" begin
@@ -369,6 +366,13 @@ end
         end""") == str
 end
 
+end
+
+@testset "formatpkg DocumentFormat" begin
+    mktempdir() do path
+        cp(joinpath(@__DIR__, ".."), joinpath(path, "DocumentFormat"))
+        formatpkg(joinpath(path, "DocumentFormat"); force = true)
+    end
 end
 
 include("test_formatconfig.jl")
