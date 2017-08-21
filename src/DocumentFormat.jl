@@ -56,7 +56,7 @@ or as a full path to the package.
 
 **Keywords**:
 * `config::String` - Path to the config file to use. If not set, will look for a
-  `.julia-config` in the package directory and if not found will use the default
+  `.julia-format` in the package directory and if not found will use the default
   config
 * `force::Bool` - Format files even if the package repository is in a dirty state, defaults to `false`.
 """
@@ -70,7 +70,7 @@ function formatpkg(pkg::String; configpath=nothing, force=false)
     else
         error("could not find the package $pkg")
     end
- 
+
     # Check dirtiness of repo
     gitrepo =
         try
@@ -86,7 +86,7 @@ function formatpkg(pkg::String; configpath=nothing, force=false)
 
     # Get the configuration
     config = if configpath == nothing
-        pkgconfigpath = joinpath(path, ".julia-config")
+        pkgconfigpath = joinpath(path, ".julia-format")
         if isfile(pkgconfigpath)
             parse_format_settings(pkgconfigpath)
         else
