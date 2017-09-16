@@ -20,7 +20,10 @@ Base.@kwdef struct FormatConfig
     TabWidth::Int = 4
     IndentEXPR::Vector = [cst.Begin,cst.Quote,cst.For,cst.While,cst.FunctionDef,cst.Macro,cst.Struct,cst.Let,cst.Try,cst.If,cst.Mutable]
     # Misc
-    StripLineEnds::Bool = true
+    No_WS_OP_group::Vector = [cst.ColonOp, cst.PowerOp, cst.DeclarationOp, cst.DotOp]
+    No_WS_OP_indv::Vector = []
+    KW_WS::Bool = true
+    StripLineEnds::Bool = false
     NewLineEOF::Bool = false
     AlignAfterOpenBracket::Options.AlignAfterOpenBracket = Options.Align
 end
