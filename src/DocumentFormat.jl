@@ -42,7 +42,7 @@ function format(str::String, config = FormatConfig())
     if ps.errored
         return str
     end
-    x0 = CSTParser.remlineinfo!(Base.parse(string("begin\n", str, "\nend")))
+    x0 = Expr(CSTParser.parse(string("begin\n", str, "\nend")))
     F = FormatState(str, config)
     format(x, F)
     F.offset = 0
@@ -50,7 +50,7 @@ function format(str::String, config = FormatConfig())
     F.config.StripLineEnds && strip_empty_line_ends(F)
     F.config.NewLineEOF && end_file_newline(F)
     str1 = apply(str, F)
-    x1 = CSTParser.remlineinfo!(Base.parse(string("begin\n", str1, "\nend")))
+    x1 = Expr(CSTParser.parse(string("begin\n", str1, "\nend")))
     if x0 == x1
         return str1
     else
@@ -62,7 +62,7 @@ function format(str::String, config = FormatConfig())
         str1 = str
         for e in edits
             str2 = string(str1[1:first(e.range)-1], e.text, str1[last(e.range)+1:end])
-            x2 = CSTParser.remlineinfo!(Base.parse(string("begin\n", str1, "\nend")))
+            x2 = Expr(CSTParser.parse(string("begin\n", str1, "\nend")))
             if x2 == x0
                 str1 = str2
             end
