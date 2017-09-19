@@ -116,7 +116,7 @@ function end_file_newline(F::FormatState)
     end
 end
 
-isnestedifblock(x::EXPR{cst.Block}) = length(x.args) == 1 && x.args[1] isa EXPR{cst.If} && !(x.args[1].args[1] isa EXPR{cst.KEYWORD{Tokens.IF}})
+isnestedifblock(x::EXPR{cst.Block}) = length(x.args) == 1 && x.args[1] isa EXPR{cst.If} && !(x.args[1].args[1] isa cst.KEYWORD && x.args[1].args[1].kind == Tokens.IF)
 
 function indent(F::FormatState)
     F.indent += 1
