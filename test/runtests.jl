@@ -8,6 +8,9 @@ end
 @testset "tuples" begin 
     @test format("a,b") == "a, b"
     @test format("a ,b") == "a, b"
+    @test format("a ,b,") == "a, b,"
+    @test format("a ,b ,") == "a, b,"
+    @test format("a , b ,") == "a, b,"
     @test format("(a,b)") == "(a, b)"
     @test format("(a ,b)") == "(a, b)"
     @test format("( a, b)") == "(a, b)"
@@ -25,7 +28,7 @@ end
 @testset "unary ops" begin
     @test format("! x") == "!x"
 end
-@testset "unary ops" begin
+@testset "conditional ops" begin
     @test format("a?b:c") == "a ? b : c"
     @test format("a ?b:c") == "a ? b : c"
     @test format("a? b:c") == "a ? b : c"
@@ -38,7 +41,7 @@ end
     @test format("a+ b*c") == "a + b * c"
     @test format("a+b *c") == "a + b * c"
     @test format("a+b* c") == "a + b * c"
-    @test format("a+b*c ") == "a + b * c"
+    @test format("a+b*c ") == "a + b * c "
     @test format("a:b") == "a:b"
     @test format("a : b") == "a:b"
     @test format("a: b") == "a:b"
@@ -48,7 +51,7 @@ end
     @test format("a: b:c") == "a:b:c"
     @test format("a:b :c") == "a:b:c"
     @test format("a:b: c") == "a:b:c"
-    @test format("a:b:c ") == "a:b:c"
+    @test format("a:b:c ") == "a:b:c "
     @test format("a::b:: c") == "a::b::c"
     @test format("a :: b::c") == "a::b::c"
 end
@@ -73,11 +76,14 @@ end
 @testset "func call" begin
     @test format("func(a, b, c)") == "func(a, b, c)"
     @test format("func(a,b,c)") == "func(a, b, c)"
+    @test format("func(a,b,c,)") == "func(a, b, c,)"
+    @test format("func(a,b,c, )") == "func(a, b, c,)"
     @test format("func( a,b,c    )") == "func(a, b, c)"
-    @test format("func(a, b, c)  ") == "func(a, b, c)"
+    @test format("func(a, b, c) ") == "func(a, b, c) "
     @test format("func(a, b; c)") == "func(a, b; c)"
     @test format("func(  a, b; c)") == "func(a, b; c)"
     @test format("func(a  ,b; c)") == "func(a, b; c)"
+    @test format("func(a=1,b; c=1)") == "func(a = 1, b; c = 1)"
 end
 
 @testset "indents" begin
@@ -114,7 +120,7 @@ end"""
                 arg
                 end
                 end""") == str
-                @test format("""
+    @test format("""
                 begin
                             begin
                 arg
@@ -163,7 +169,7 @@ end
     end""") == str
     @test format("""
     for iter = I
-        arg
+      arg
     end""") == str
 
     str = """
@@ -234,7 +240,6 @@ end
     end""") == str
 end
 
-
 @testset "struct" begin
     str = """
     struct name
@@ -272,7 +277,6 @@ end
             arg
         end""") == str
 end
-
 
 @testset "try-catch" begin
     str = """
