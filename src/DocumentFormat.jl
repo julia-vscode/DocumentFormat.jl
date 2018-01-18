@@ -200,7 +200,7 @@ function get_ws_arg(x, F)
         ws = i -> i != nargs && iseven(i)
         no_ws = i -> i != nargs && isodd(i)
     elseif x isa EXPR{CSTParser.Kw}
-        ws = i -> i != 3 && F.config.KW_WS
+        ws = i -> false
         no_ws = i -> i != 3 && F.config.KW_WS
     elseif x isa EXPR{CSTParser.TupleH} && !isempty(x.args)
         nargs = length(x.args)
