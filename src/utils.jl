@@ -104,7 +104,7 @@ function strip_empty_line_ends(F)
             while endswith(line, string(" "^nws, "\n"))
                 nws += 1
             end
-            nws -= 2
+            nws -= 1
             push!(F.diagnostics, Diagnostic("Removing empty spaces at end of line ", [Deletion(last(li) + (-nws:-1))]))
         end
     end
