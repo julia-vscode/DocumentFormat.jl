@@ -80,7 +80,7 @@ Format the package `pkg` either given as the name of the package
 or as a full path to the package.
 
 **Keywords**:
-* `config::String` - Path to the config file to use. If not set, will look for a
+* `configpath::String` - Path to the config file to use. If not set, will look for a
   `.julia-config` in the package directory and if not found will use the default
   config
 * `force::Bool` - Format files even if the package repository is in a dirty state, defaults to `false`.
