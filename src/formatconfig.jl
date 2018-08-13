@@ -31,7 +31,7 @@ end
 const __config_settings_docstr = let
     default_config = FormatConfig()
     io = IOBuffer()
-    sortperm_fields = sortperm(fieldnames(FormatConfig))
+    sortperm_fields = sortperm(collect(fieldnames(FormatConfig)))
     for i in sortperm_fields
         setting, typ = fieldnames(FormatConfig)[i], FormatConfig.types[i]
         default_value = getfield(default_config, setting)
