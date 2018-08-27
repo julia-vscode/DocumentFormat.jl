@@ -1,12 +1,16 @@
 function no_trailing_ws(x, F)
     if trailing_ws_length(x) > 0
-        push!(F.diagnostics, Diagnostic("Unwanted white space", [Deletion(F.offset + (length(x.span) + 1:x.fullspan))]))
+        push!(F.diagnostics, Diagnostic("Unwanted white space", 
+            [Deletion((F.offset + length(x.span) + 1):
+                      (F.offset + x.fullspan))]))
     end
 end
 
 function trailing_ws(x, F)
     if trailing_ws_length(x) == 0
-        push!(F.diagnostics, Diagnostic("Missing white space between operator and argument", [TextEdit(F.offset + x.fullspan + (1:0), " ")]))
+        push!(F.diagnostics, Diagnostic("Missing white space between operator and argument", 
+                                        [TextEdit( F.offset + x.fullspan + 1:
+                                                   F.offset + x.fullspan, " ")]))
     end
 end
 
@@ -26,18 +30,20 @@ end
 # returns a vector of ranges in terms of bytes
 function get_line_ranges(str::String)
     line_ranges = UnitRange{Int}[]
-    i = search(str, '\n')
+    i = findfirst("\n", str) 
     n = sizeof(str)
-    if i == 0
+    if isa(i, Nothing)
         push!(line_ranges, 1:sizeof(str))
     else
+        i = i.start 
         push!(line_ranges, 1:i)
         while i < n
-            i1 = search(str, '\n', i + 1)
-            if i1 == 0
+            i1 = findnext("\n", str, i+1) 
+            if isa(i1, Nothing)
                 push!(line_ranges, i + 1:sizeof(str))
                 break
             else
+                i1 = i1.start
                 push!(line_ranges, i + 1:i1)
                 i = i1
             end
@@ -68,7 +74,7 @@ function find_line(r::UnitRange{Int},line_ranges::Vector{UnitRange{Int}})
 end
 
 function find_line(x::EXPR, F::FormatState)
-    find_line(F.offset + (1:length(x.span)), F.line_ranges)
+    find_line( F.offset + 1 : F.offset + length(x.span), F.line_ranges)
 end
 
 function is_multi_line(x::EXPR, F::FormatState)
@@ -82,10 +88,12 @@ function check_indent(F)
     line = F.content[lr]
     if !startswith(line, " "^target_indent)
         i = target_indent - findfirst(x -> x != ' ', line) + 1
-        push!(F.diagnostics, Diagnostic("Adding indent", [TextEdit(first(lr) + (0:-1), " "^i)]))
+        push!(F.diagnostics, Diagnostic("Adding indent", 
+                                        [TextEdit(first(lr) : first(lr)-1, " "^i)]))
     elseif length(line) > target_indent && line[target_indent + 1] == ' '
         i = findfirst(x -> x != ' ', line) - 1
-        push!(F.diagnostics, Diagnostic("Removing indent", [Deletion(first(lr) - 1 + (1:(i - target_indent)))]))
+        push!(F.diagnostics, Diagnostic("Removing indent", 
+                        [Deletion(first(lr) : first(lr) - 1 + i - target_indent)]))
     end
 end
 
