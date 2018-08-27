@@ -1,5 +1,5 @@
-using DocumentFormat: format, formatpkg
-using Base.Test
+import DocumentFormat: format, formatpkg
+using Test
 
 @testset "All" begin
 @testset "basic" begin
