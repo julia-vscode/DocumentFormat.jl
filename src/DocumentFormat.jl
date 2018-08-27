@@ -142,7 +142,7 @@ function formatpkg(pkg::String; configpath=nothing, force=false)
     err, path_to_file_with_error = apply_to_julia_files_in_folder(
         function(file)
             try     
-                CSTParser.parse(readstring(file))
+                CSTParser.parse(read(file, String))
             catch er
                 return er
             end
@@ -157,7 +157,7 @@ function formatpkg(pkg::String; configpath=nothing, force=false)
     # Ok, all files parsed correctly, let's do the formatting
     err, path_to_file_with_error = apply_to_julia_files_in_folder(
         function(file)
-            oldstr = readstring(file)
+            oldstr = read(file, String)
             newstr = format(oldstr, config)
             # Check that newstr parses TODO: Should this be an option to `format`?
             try

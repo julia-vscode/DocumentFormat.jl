@@ -1,5 +1,5 @@
 module TestFormatConfig
-using Base.Test
+using Test
 using DocumentFormat
 import DocumentFormat: parse_format_settings, Options, FormatConfigParserException
 
