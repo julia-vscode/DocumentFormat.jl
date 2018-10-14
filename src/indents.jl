@@ -49,7 +49,7 @@ function indent_pass(x, state)
         state.edits.indent -= 1
         check_indent(x.args[3], state)
         state.offset += x.args[3].fullspan
-    elseif x isa CSTParser.EXPR{T} where T <: Union{CSTParser.FunctionDef,CSTParser.Macro,CSTParser.For,CSTParser.While,CSTParser.Let,CSTParser.Struct,CSTParser.ModuleH}
+    elseif x isa CSTParser.EXPR{T} where T <: Union{CSTParser.FunctionDef,CSTParser.Macro,CSTParser.For,CSTParser.While,CSTParser.Let,CSTParser.Struct,CSTParser.ModuleH,CSTParser.BareModule}
         state.offset += x.args[1].fullspan + x.args[2].fullspan
         if x.args[3] isa CSTParser.EXPR{CSTParser.Block}
             state.edits.indent += 1
