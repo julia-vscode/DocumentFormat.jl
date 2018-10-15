@@ -5,7 +5,7 @@ using Test
 @testset "basic" begin
     @test format("a") == "a"
 end
-@testset "tuples" begin 
+@testset "tuples" begin
     @test format("a,b") == "a, b"
     @test format("a ,b") == "a, b"
     @test format("a ,b,") == "a, b,"
@@ -17,7 +17,7 @@ end
     @test format("(a, b )") == "(a, b)"
     @test format("(a, b ,)") == "(a, b,)"
 end
-@testset "curly" begin 
+@testset "curly" begin
     @test format("X{a,b}") == "X{a,b}"
     @test format("X{ a,b}") == "X{a,b}"
     @test format("X{a ,b}") == "X{a,b}"
@@ -345,6 +345,81 @@ end
         catch err
             arg
         end""") == str
+end
+
+@testset "Docs" begin
+    str = """
+       begin
+       \"\"\"
+       docstring for f\"\"\"
+       function f()
+           100
+       end
+       end
+       """
+    @test """
+       begin
+           \"\"\"
+           docstring for f\"\"\"
+           function f()
+               100
+           end
+       end
+       """ == format(str)
+    str = """
+       begin
+       \"\"\"
+       docstring for f
+       \"\"\"
+       function f()
+           100
+       end
+       end
+       """
+    @test """
+       begin
+           \"\"\"
+           docstring for f
+           \"\"\"
+           function f()
+               100
+           end
+       end
+       """ == format(str)
+    str = """
+       begin
+       \"\"\"docstring for f
+       \"\"\"
+       function f()
+           100
+       end
+       end
+       """
+    @test """
+       begin
+           \"\"\"docstring for f
+           \"\"\"
+           function f()
+               100
+           end
+       end
+       """ == format(str)
+    str = """
+       begin
+       \"\"\"docstring for f\"\"\"
+       function f()
+           100
+       end
+       end
+       """
+    @test """
+       begin
+           \"\"\"docstring for f\"\"\"
+           function f()
+               100
+           end
+       end
+       """ == format(str)
 end
 
 end

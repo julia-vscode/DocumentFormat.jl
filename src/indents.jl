@@ -1,4 +1,5 @@
 const INDENT = 4
+
 mutable struct IndentState
     indent::Int
     lines
@@ -19,15 +20,14 @@ function get_lines(text)
             else
                 push!(lines, (0, 0))
             end
-        end
-        if t.startpos[1] != t.endpos[1] && t.kind == Tokens.WHITESPACE
-            if t.kind == Tokens.WHITESPACE && t.endpos[2] == 0
-                push!(lines, (0, t.endbyte + 1))
-            else
-                push!(lines, (t.endpos[2], t.endbyte - t.endpos[2] + 1))
+        elseif t.startpos[1] != t.endpos[1] && t.kind == Tokens.TRIPLE_STRING
+            nls = findall(x -> x == '\n', t.val)
+            for nl in nls
+                push!(lines, (t.startpos[2]-1, nl + t.startbyte))
             end
+        elseif t.startpos[1] != t.endpos[1] && t.kind == Tokens.WHITESPACE
+            push!(lines, (t.endpos[2], t.endbyte - t.endpos[2] + 1))
         end
-        
         pt = t
     end
     lines
@@ -49,7 +49,7 @@ function indent_pass(x, state)
         state.edits.indent -= 1
         check_indent(x.args[3], state)
         state.offset += x.args[3].fullspan
-    elseif x isa CSTParser.EXPR{T} where T <: Union{CSTParser.FunctionDef,CSTParser.Macro,CSTParser.For,CSTParser.While,CSTParser.Let,CSTParser.ModuleH,CSTParser.BareModule,CSTParser.Struct}
+    elseif x isa CSTParser.EXPR{T} where T <: Union{CSTParser.FunctionDef,CSTParser.Macro,CSTParser.For,CSTParser.While,CSTParser.Let,CSTParser.Struct,CSTParser.ModuleH,CSTParser.BareModule}
         state.offset += x.args[1].fullspan + x.args[2].fullspan
         if x.args[3] isa CSTParser.EXPR{CSTParser.Block}
             state.edits.indent += 1
@@ -63,6 +63,43 @@ function indent_pass(x, state)
         else
             check_indent(x.args[3], state)
             state.offset += x.args[3].fullspan
+        end
+    elseif x isa CSTParser.EXPR{CSTParser.MacroCall}
+        if x.args[1] isa CSTParser.EXPR{CSTParser.GlobalRefDoc}
+            state.offset += x.args[1].fullspan
+
+            # Doc alignment cases:
+            #
+            # 1. """doc"""
+            # 2. """
+            #    doc
+            #    """
+            # 3. """doc
+            #    """
+            # 4. """
+            #    doc"""
+            #
+
+            doc = x.args[2]
+            doc_strs = split(doc.val, "\n")
+
+            # If true there is a newline after the initial triple quote
+            length(doc.val) + 8 == doc.fullspan ? (state.offset += 4) : (state.offset += 3)
+
+            for s in doc_strs
+                l = length(s)
+                a = CSTParser.LITERAL(l+1, 1:l, s, Tokens.STRING)
+                check_indent(a, state)
+                indent_pass(a, state)
+            end
+            state.offset += 3
+
+            check_indent(x.args[3], state)
+            indent_pass(x.args[3], state)
+        else
+            for a in x
+                indent_pass(a, state)
+            end
         end
     elseif x isa CSTParser.EXPR{CSTParser.Mutable}
         state.offset += x.args[1].fullspan + x.args[2].fullspan + x.args[3].fullspan
@@ -80,8 +117,8 @@ function indent_pass(x, state)
             state.offset += x.args[4].fullspan
         end
     elseif x isa CSTParser.EXPR{CSTParser.Try}
-        state.offset += x.args[1].fullspan 
-        
+        state.offset += x.args[1].fullspan
+
         state.edits.indent += 1
         for a in x.args[2]
             check_indent(a, state)
@@ -90,7 +127,7 @@ function indent_pass(x, state)
         state.edits.indent -= 1
         check_indent(x.args[3], state)
         state.offset += x.args[3].fullspan + x.args[4].fullspan
-        
+
         state.edits.indent += 1
         for a in x.args[5]
             check_indent(a, state)
@@ -108,17 +145,18 @@ function indent_pass(x, state)
                 check_indent(a, state)
                 indent_pass(a, state)
             end
-            state.edits.indent -= 1    
+            state.edits.indent -= 1
             check_indent(x.args[4], state)
             state.offset += x.args[4].fullspan
             if length(x.args) > 4
-                state.edits.indent += 1    
+                state.edits.indent += 1
                 for a in x.args[5]
                     check_indent(a, state)
                     indent_pass(a, state)
                 end
-                state.edits.indent -= 1   
-                check_indent(x.args[6], state) 
+                state.edits.indent -= 1
+                check_indent(x.args[6], state)
+                state.offset += x.args[6].fullspan
             end
         else
             state.offset += x.args[1].fullspan
@@ -127,18 +165,18 @@ function indent_pass(x, state)
                 indent_pass(a, state)
             end
             if length(x.args) > 2
-                state.edits.indent -= 1 
+                state.edits.indent -= 1
                 check_indent(x.args[3], state)
                 state.offset += x.args[3].fullspan
-                state.edits.indent += 1 
+                state.edits.indent += 1
                 for a in x.args[4]
                     check_indent(a, state)
                     indent_pass(a, state)
                 end
-                
-            end   
+
+            end
         end
-        
+
     elseif x isa CSTParser.LeafNode
         state.offset += x.fullspan
     else
@@ -153,6 +191,7 @@ function check_indent(x, state)
     for (i,l) in state.edits.lines
         if state.offset == l+i
             if state.edits.indent*INDENT != i
+                #= @info CSTParser.str_value(CSTParser.get_name(x)), state.edits.indent*INDENT, i, state.offset =#
                 push!(state.edits.edits, (l, state.edits.indent*INDENT - i))
             end
         end
