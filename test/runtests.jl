@@ -16,6 +16,16 @@ end
     @test format("( a, b)") == "(a, b)"
     @test format("(a, b )") == "(a, b)"
     @test format("(a, b ,)") == "(a, b,)"
+    @test format("π,汉") == "π, 汉"
+    @test format("π ,汉") == "π, 汉"
+    @test format("π ,汉,") == "π, 汉,"
+    @test format("π ,汉 ,") == "π, 汉,"
+    @test format("π , 汉 ,") == "π, 汉,"
+    @test format("(π,汉)") == "(π, 汉)"
+    @test format("(π ,汉)") == "(π, 汉)"
+    @test format("( π, 汉)") == "(π, 汉)"
+    @test format("(π, 汉 )") == "(π, 汉)"
+    @test format("(π, 汉 ,)") == "(π, 汉,)"
 end
 @testset "curly" begin
     @test format("X{a,b}") == "X{a,b}"
@@ -24,6 +34,12 @@ end
     @test format("X{a, b}") == "X{a,b}"
     @test format("X{a,b }") == "X{a,b}"
     @test format("X{a,b }") == "X{a,b}"
+    @test format("X{π,汉}") == "X{π,汉}"
+    @test format("X{ π,汉}") == "X{π,汉}"
+    @test format("X{π ,汉}") == "X{π,汉}"
+    @test format("X{π, 汉}") == "X{π,汉}"
+    @test format("X{π,汉 }") == "X{π,汉}"
+    @test format("X{π,汉 }") == "X{π,汉}"
 end
 # @testset "unary ops" begin
 #     @test format("! x") == "!x"
@@ -47,14 +63,34 @@ end
     @test format("a:b:c ") == "a:b:c "
     @test format("a::b:: c") == "a::b::c"
     @test format("a :: b::c") == "a::b::c"
+    @test format("π+σ*汉") == "π + σ * 汉"
+    @test format("π +σ*汉") == "π + σ * 汉"
+    @test format("π+ σ*汉") == "π + σ * 汉"
+    @test format("π+σ *汉") == "π + σ * 汉"
+    @test format("π+σ* 汉") == "π + σ * 汉"
+    @test format("π+σ*汉 ") == "π + σ * 汉 "
+    @test format("π:汉") == "π:汉"
+    @test format("π : 汉") == "π:汉"
+    @test format("π: 汉") == "π:汉"
+    @test format("π :汉") == "π:汉"
+    @test format("π:σ:汉") == "π:σ:汉"
+    @test format("π :σ:汉") == "π:σ:汉"
+    @test format("π: σ:汉") == "π:σ:汉"
+    @test format("π:σ :汉") == "π:σ:汉"
+    @test format("π:σ: 汉") == "π:σ:汉"
+    @test format("π:σ:汉 ") == "π:σ:汉 "
+    @test format("π::σ:: 汉") == "π::σ::汉"
+    @test format("π :: σ::汉") == "π::σ::汉"
 end
 
 @testset "op chain" begin
     @test format("a+b+c+d") == "a + b + c + d"
+    @test format("π+σ+汉+a汉π") == "π + σ + 汉 + a汉π"
 end
 
 @testset "comparison chain" begin
     @test format("a<b==c≥d") == "a < b == c ≥ d"
+    @test format("π<σ==汉≥a汉π") == "π < σ == 汉 ≥ a汉π"
 end
 
 @testset "colon op" begin
@@ -64,6 +100,7 @@ end
     @test format("a:b:c") == "a:b:c"
     @test format("a:b:c") == "a:b:c"
     @test format("a:b:c") == "a:b:c"
+    @test format("π:σ:汉") == "π:σ:汉"
 end
 
 # @testset "func call" begin
