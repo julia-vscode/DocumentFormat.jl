@@ -28,7 +28,6 @@ function format(text)
     end
     text = indents(text)
     return text
-    
 end
 
 function pass(x::CSTParser.LeafNode, state, f = (x,edits)->nothing)
@@ -45,16 +44,35 @@ end
 
 
 
+function get_last_char_index(s)
+    len = lastindex(s)
+    pos = len > 5 ? len - 5 : 1
+    try
+        while true
+            try; s[pos]; catch StringIndexError; pos += 1; continue; end
+            break
+        end
+    catch BoundsError
+        error("A UTF-8 char longer than 5 bytes was encountered, which is not supported currently.")
+    end
+    while true
+        if (nextpos = nextind(s, pos)) > len ; break; end
+        pos = nextpos
+    end
+    pos
+end
+
 function ensure_single_space_after(x, state, offset)
     if x.fullspan == last(x.span)
-        if x isa CSTParser.OPERATOR 
+        if x isa CSTParser.OPERATOR
             if length(x.span) > 1 && length(String(Expr(x))) == 1
                 push!(state.edits, Edit(offset + 1, " "))
             else
                 push!(state.edits, Edit(offset + x.fullspan, " "))
             end
         else
-            push!(state.edits, Edit(offset + x.fullspan, " "))
+            last_char_index=isdefined(x,:val) ? get_last_char_index(x.val) : x.fullspan
+            push!(state.edits, Edit(offset + last_char_index, " "))
         end
     end
 end
