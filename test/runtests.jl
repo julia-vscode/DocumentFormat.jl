@@ -149,38 +149,59 @@ end
 
 @testset "for" begin
     str = """
-    for iter = I
+    for iter in I
         arg
     end"""
     @test format("""
-    for iter = I
+    for iter in I
         arg
     end""") == str
     @test format("""
-    for iter = I
+    for iter in I
     arg
     end""") == str
     @test format("""
-    for iter = I
+    for iter in I
       arg
     end""") == str
 
     str = """
-    for iter = I, iter2 = I2
+    for iter in I, iter2 in I2
         arg
     end"""
     @test format("""
-    for iter = I, iter2 = I2
+    for iter in I, iter2 in I2
+        arg
+    end""") == str
+    @test format("""
+    for iter in I, iter2 in I2
+    arg
+    end""") == str
+    @test format("""
+    for iter in I, iter2 in I2
+            arg
+        end""") == str
+
+    str = """
+    for iter in I, iter2 in I2
+        arg
+    end"""
+    @test format("""
+    for iter=I, iter2 in I2
+        arg
+    end""") == str
+    @test format("""
+    for iter =I, iter2 in I2
+        arg
+    end""") == str
+    @test format("""
+    for iter =I, iter2 in I2
         arg
     end""") == str
     @test format("""
     for iter = I, iter2 = I2
-    arg
+        arg
     end""") == str
-    @test format("""
-    for iter = I, iter2 = I2
-            arg
-        end""") == str
 end
 
 @testset "while" begin
@@ -347,36 +368,40 @@ end
         end""") == str
 end
 
-@testset "Docs" begin
+@testset "docs" begin
     str = """
-       begin
-       \"\"\"
-       docstring for f\"\"\"
-       function f()
-           100
-       end
-       end
-       """
-    @test """
-       begin
-           \"\"\"
-           docstring for f\"\"\"
-           function f()
-               100
-           end
-       end
-       """ == format(str)
+    \"\"\"
+    doc
+    \"\"\"
+    function f()
+        20
+    end"""
+
+    @test format("""
+    \"\"\"doc
+    \"\"\"
+    function f()
+        20
+    end""") == str
+    @test format("""
+    \"\"\"
+    doc\"\"\"
+    function f()
+        20
+    end""") == str
+    @test format("""
+    \"\"\"doc\"\"\"
+    function f()
+        20
+    end""") == str
+    @test format("""
+    \"\"\" doc
+          \"\"\"
+    function f()
+        20
+    end""") == str
+
     str = """
-       begin
-       \"\"\"
-       docstring for f
-       \"\"\"
-       function f()
-           100
-       end
-       end
-       """
-    @test """
        begin
            \"\"\"
            docstring for f
@@ -384,42 +409,15 @@ end
            function f()
                100
            end
-       end
-       """ == format(str)
-    str = """
+       end"""
+    @test format("""
        begin
-       \"\"\"docstring for f
-       \"\"\"
+       \"\"\" docstring for f
+                \"\"\"
        function f()
            100
        end
-       end
-       """
-    @test """
-       begin
-           \"\"\"docstring for f
-           \"\"\"
-           function f()
-               100
-           end
-       end
-       """ == format(str)
-    str = """
-       begin
-       \"\"\"docstring for f\"\"\"
-       function f()
-           100
-       end
-       end
-       """
-    @test """
-       begin
-           \"\"\"docstring for f\"\"\"
-           function f()
-               100
-           end
-       end
-       """ == format(str)
+       end""") == str
 end
 
 end

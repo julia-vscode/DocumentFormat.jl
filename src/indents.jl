@@ -68,24 +68,10 @@ function indent_pass(x, state)
         if x.args[1] isa CSTParser.EXPR{CSTParser.GlobalRefDoc}
             state.offset += x.args[1].fullspan
 
-            # Doc alignment cases:
-            #
-            # 1. """doc"""
-            # 2. """
-            #    doc
-            #    """
-            # 3. """doc
-            #    """
-            # 4. """
-            #    doc"""
-            #
-
             doc = x.args[2]
             doc_strs = split(doc.val, "\n")
 
-            # If true there is a newline after the initial triple quote
-            length(doc.val) + 8 == doc.fullspan ? (state.offset += 4) : (state.offset += 3)
-
+            state.offset += 4
             for s in doc_strs
                 l = length(s)
                 a = CSTParser.LITERAL(l+1, 1:l, s, Tokens.STRING)

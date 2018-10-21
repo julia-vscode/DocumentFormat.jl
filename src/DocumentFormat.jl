@@ -22,13 +22,18 @@ function format(text)
     pass(x, state, curly_pass)
     state.offset = 0
     pass(x, state, call_pass)
+    state.offset = 0
+    pass(x, state, forloop_pass)
+    state.offset = 0
+    pass(x, state, doc_pass)
     sort!(state.edits, lt = (a,b) -> first(a.loc) < first(b.loc), rev = true)
+    #= @info state.edits =#
     for i = 1:length(state.edits)
         text = apply(text, state.edits[i])
     end
     text = indents(text)
     return text
-    
+
 end
 
 function pass(x::CSTParser.LeafNode, state, f = (x,edits)->nothing)
@@ -47,7 +52,7 @@ end
 
 function ensure_single_space_after(x, state, offset)
     if x.fullspan == last(x.span)
-        if x isa CSTParser.OPERATOR 
+        if x isa CSTParser.OPERATOR
             if length(x.span) > 1 && length(String(Expr(x))) == 1
                 push!(state.edits, Edit(offset + 1, " "))
             else

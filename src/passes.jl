@@ -68,7 +68,7 @@ end
 
 function call_pass(x, state)
     if x isa CSTParser.EXPR{CSTParser.Call}
-        offset = state.offset + x.args[1].fullspan 
+        offset = state.offset + x.args[1].fullspan
         n = length(x)
         for (i, a) in enumerate(x)
             i == 1 && continue
@@ -83,5 +83,68 @@ function call_pass(x, state)
     elseif x isa CSTParser.EXPR{CSTParser.Kw}
         ensure_single_space_after(x.args[1], state, state.offset)
         ensure_single_space_after(x.args[2], state, state.offset + x.args[1].fullspan)
+    end
+end
+
+function forloop_pass(x, state)
+    if x isa CSTParser.EXPR{CSTParser.For}
+        offset = state.offset + x.args[1].fullspan
+        for a in x.args[2]
+            # convert iter = I into iter in I
+            if a isa CSTParser.BinarySyntaxOpCall && CSTParser.is_eq(a.op)
+                offset += a.arg1.fullspan
+                push!(state.edits, Edit(offset+1:offset+2, "in "))
+                offset += a.op.fullspan
+                offset += a.arg2.fullspan
+            else
+                offset += a.fullspan
+            end
+        end
+    end
+end
+
+function doc_pass(x, state)
+    if x isa CSTParser.EXPR{CSTParser.MacroCall} && x.args[1] isa CSTParser.EXPR{CSTParser.GlobalRefDoc}
+        # if the docstring is global align it to:
+        #
+        # """
+        # doc
+        # """
+        #
+        # cases:
+        #
+        # """
+        # doc"""
+        #
+        # """doc
+        # """
+        #
+        # """doc"""
+        offset = state.offset + x.args[1].fullspan
+        doc = x.args[2]
+        doc_fullspan = offset + doc.fullspan
+        tq = "\"\"\"\n"
+        ltq = length(tq)
+
+        ss = string(tq, strip(doc.val), "\n")
+        push!(state.edits, Edit(offset+1:offset+length(ss), ss))
+        offset += length(ss)
+
+        # It's possible adding the closing triple quote + newline
+        # will extend past the docstring fullspan
+        diff = offset + ltq - doc_fullspan
+        if diff > 0
+            l = ltq - diff
+            push!(state.edits, Edit(offset+1:offset+l, tq[1:l]))
+            offset += l
+            push!(state.edits, Edit(offset, tq[l+1:end]))
+        else
+            push!(state.edits, Edit(offset+1:offset+ltq, tq))
+            offset += ltq
+        end
+
+        if offset < doc_fullspan
+            push!(state.edits, Edit(offset+1:doc_fullspan, ""))
+        end
     end
 end
