@@ -111,40 +111,20 @@ function doc_pass(x, state)
         # doc
         # """
         #
-        # cases:
-        #
-        # """
-        # doc"""
-        #
-        # """doc
-        # """
-        #
-        # """doc"""
+        # If the doc is single quoted i.e. "doc", they will be replaced with triple quotes.
         offset = state.offset + x.args[1].fullspan
         doc = x.args[2]
-        doc_fullspan = offset + doc.fullspan
-        tq = "\"\"\"\n"
-        ltq = length(tq)
+        val = CSTParser.str_value(doc)
+        fname = x.args[3] |> CSTParser.get_name |> CSTParser.str_value
+        s = string(strip(val), "\n")
+        ds = string("\"\"\"\n", s, "\"\"\"\n")
 
-        ss = string(tq, strip(doc.val), "\n")
-        push!(state.edits, Edit(offset+1:offset+length(ss), ss))
-        offset += length(ss)
-
-        # It's possible adding the closing triple quote + newline
-        # will extend past the docstring fullspan
-        diff = offset + ltq - doc_fullspan
-        if diff > 0
-            l = ltq - diff
-            push!(state.edits, Edit(offset+1:offset+l, tq[1:l]))
-            offset += l
-            push!(state.edits, Edit(offset, tq[l+1:end]))
-        else
-            push!(state.edits, Edit(offset+1:offset+ltq, tq))
-            offset += ltq
-        end
-
-        if offset < doc_fullspan
-            push!(state.edits, Edit(offset+1:doc_fullspan, ""))
+        # check if docstring needs to be edited
+        if length(ds) != doc.fullspan || s != val
+            # remove previous docstring
+            push!(state.edits, Edit(offset+1:offset+doc.fullspan, ""))
+            # append newly formatted docstring
+            push!(state.edits, Edit(offset, ds))
         end
     end
 end

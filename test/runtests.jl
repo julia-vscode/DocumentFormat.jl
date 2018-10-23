@@ -401,6 +401,30 @@ end
         20
     end""") == str
 
+    @test format("""
+    "doc
+    "
+    function f()
+        20
+    end""") == str
+    @test format("""
+    "
+    doc"
+    function f()
+        20
+    end""") == str
+    @test format("""
+    "doc"
+    function f()
+        20
+    end""") == str
+    @test format("""
+    " doc
+          "
+    function f()
+        20
+    end""") == str
+
     str = """
        begin
            \"\"\"

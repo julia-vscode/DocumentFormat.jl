@@ -69,7 +69,7 @@ function indent_pass(x, state)
             state.offset += x.args[1].fullspan
 
             doc = x.args[2]
-            doc_strs = split(doc.val, "\n")
+            doc_strs = split(CSTParser.str_value(doc), "\n")
 
             state.offset += 4
             for s in doc_strs
