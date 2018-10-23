@@ -394,12 +394,6 @@ end
     function f()
         20
     end""") == str
-    @test format("""
-    \"\"\" doc
-          \"\"\"
-    function f()
-        20
-    end""") == str
 
     @test format("""
     "doc
@@ -418,16 +412,12 @@ end
     function f()
         20
     end""") == str
-    @test format("""
-    " doc
-          "
-    function f()
-        20
-    end""") == str
 
     str = """
        begin
            \"\"\"
+               f
+
            docstring for f
            \"\"\"
            function f()
@@ -436,8 +426,13 @@ end
        end"""
     @test format("""
        begin
-       \"\"\" docstring for f
-                \"\"\"
+       \"\"\"
+
+           f
+
+       docstring for f
+
+       \"\"\"
        function f()
            100
        end

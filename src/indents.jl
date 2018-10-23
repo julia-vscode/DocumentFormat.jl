@@ -72,11 +72,17 @@ function indent_pass(x, state)
             doc_strs = split(CSTParser.str_value(doc), "\n")
 
             state.offset += 4
-            for s in doc_strs
-                l = length(s)
-                a = CSTParser.LITERAL(l+1, 1:l, s, Tokens.STRING)
-                check_indent(a, state)
-                indent_pass(a, state)
+            for (i, s) in enumerate(doc_strs)
+                # Skip indenting lines of "".
+                # The final "" is associated with identing the
+                # trailing docstring triple quote
+                if s == "" && i != length(doc_strs)
+                    state.offset += 1
+                else
+                    a = CSTParser.LITERAL(length(s)+1, 1:length(s), s, Tokens.STRING)
+                    check_indent(a, state)
+                    indent_pass(a, state)
+                end
             end
             state.offset += 3
 

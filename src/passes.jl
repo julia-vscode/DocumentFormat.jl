@@ -105,7 +105,7 @@ end
 
 function doc_pass(x, state)
     if x isa CSTParser.EXPR{CSTParser.MacroCall} && x.args[1] isa CSTParser.EXPR{CSTParser.GlobalRefDoc}
-        # if the docstring is global align it to:
+        # Align global docstring to:
         #
         # """
         # doc
@@ -115,15 +115,14 @@ function doc_pass(x, state)
         offset = state.offset + x.args[1].fullspan
         doc = x.args[2]
         val = CSTParser.str_value(doc)
-        fname = x.args[3] |> CSTParser.get_name |> CSTParser.str_value
-        s = string(strip(val), "\n")
-        ds = string("\"\"\"\n", s, "\"\"\"\n")
+        s = strip(val, ['\n'])
+        ds = string("\"\"\"\n", s, "\n", "\"\"\"\n")
 
-        # check if docstring needs to be edited
+        # Check if docstring needs to be edited
         if length(ds) != doc.fullspan || s != val
-            # remove previous docstring
+            # Remove previous docstring
             push!(state.edits, Edit(offset+1:offset+doc.fullspan, ""))
-            # append newly formatted docstring
+            # Append newly formatted docstring
             push!(state.edits, Edit(offset, ds))
         end
     end
