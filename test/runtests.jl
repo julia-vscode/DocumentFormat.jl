@@ -147,6 +147,21 @@ end
         end""") == str
 end
 
+@testset "do" begin
+    str = """
+    map(args) do x
+        y = 20
+        return x * y
+    end"""
+
+    @test format("""
+    map(args) do x
+      y = 20
+                        return x * y
+        end""") == str
+
+end
+
 @testset "for" begin
     str = """
     for iter in I
@@ -189,19 +204,19 @@ end
     @test format("""
     for iter=I, iter2 in I2
         arg
-    end""") == str
+    end""", convert_iterator_ops=true) == str
     @test format("""
     for iter =I, iter2 in I2
         arg
-    end""") == str
+    end""", convert_iterator_ops=true) == str
     @test format("""
     for iter =I, iter2 in I2
         arg
-    end""") == str
+    end""", convert_iterator_ops=true) == str
     @test format("""
     for iter = I, iter2 = I2
         arg
-    end""") == str
+    end""", convert_iterator_ops=true) == str
 end
 
 @testset "while" begin
@@ -370,27 +385,27 @@ end
 
 @testset "docs" begin
     str = """
-    \"\"\"
+    \"""
     doc
-    \"\"\"
+    \"""
     function f()
         20
     end"""
 
     @test format("""
-    \"\"\"doc
-    \"\"\"
+    \"""doc
+    \"""
     function f()
         20
     end""") == str
     @test format("""
-    \"\"\"
-    doc\"\"\"
+    \"""
+    doc\"""
     function f()
         20
     end""") == str
     @test format("""
-    \"\"\"doc\"\"\"
+    \"""doc\"""
     function f()
         20
     end""") == str
@@ -413,26 +428,33 @@ end
         20
     end""") == str
 
+    # tests indentation and correctly formatting a docstring with escapes
     str = """
        begin
-           \"\"\"
+           \"""
                f
 
            docstring for f
-           \"\"\"
+           :(function \$(dict[:name]){\$(all_params...)}(\$(dict[:args]...);
+                                                \$(dict[:kwargs]...))::\$rtype
+           \$(dict[:body])
+           \"""
            function f()
                100
            end
        end"""
     @test format("""
        begin
-       \"\"\"
+       \"""
 
            f
 
        docstring for f
+       :(function \$(dict[:name]){\$(all_params...)}(\$(dict[:args]...);
+                                            \$(dict[:kwargs]...))::\$rtype
+       \$(dict[:body])
 
-       \"\"\"
+       \"""
        function f()
            100
        end

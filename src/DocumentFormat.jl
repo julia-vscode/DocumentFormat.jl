@@ -12,7 +12,7 @@ mutable struct State{T}
     edits::T
 end
 
-function format(text)
+function format(text; convert_iterator_ops=false)
     state = State(0, Edit[])
     x = CSTParser.parse(text, true)
     pass(x, state, operator_pass)
@@ -22,8 +22,10 @@ function format(text)
     pass(x, state, curly_pass)
     state.offset = 0
     pass(x, state, call_pass)
-    state.offset = 0
-    pass(x, state, forloop_pass)
+    if convert_iterator_ops
+        state.offset = 0
+        pass(x, state, forloop_pass)
+    end
     state.offset = 0
     pass(x, state, doc_pass)
     sort!(state.edits, lt = (a,b) -> first(a.loc) < first(b.loc), rev = true)

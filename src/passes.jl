@@ -103,6 +103,65 @@ function forloop_pass(x, state)
     end
 end
 
+# TODO: move this to CSTParser?
+function CSTParser.str_value(x::CSTParser.PUNCTUATION)
+    x.kind == Tokens.LPAREN && return "("
+    x.kind == Tokens.LBRACE && return "{"
+    x.kind == Tokens.LSQUARE && return "["
+    x.kind == Tokens.RPAREN && return ")"
+    x.kind == Tokens.RBRACE && return "}"
+    x.kind == Tokens.RSQUARE && return "]"
+    x.kind == Tokens.COMMA && return ","
+    x.kind == Tokens.SEMICOLON && return ";"
+    x.kind == Tokens.AT_SIGN && return "@"
+    return ""
+end
+
+function CSTParser.str_value(x::CSTParser.EXPR)
+    s = ""
+    for a in x
+        s *= CSTParser.str_value(a)
+    end
+    return s
+end
+
+function CSTParser.str_value(x::CSTParser.UnarySyntaxOpCall)
+    s = CSTParser.str_value(x.arg1)
+    s *= CSTParser.str_value(x.arg2)
+    return s
+end
+
+#= function CSTParser.str_value(x::CSTParser.UnaryOpCall) =#
+#=     s = CSTParser.str_value(x.op) =#
+#=     s *= CSTParser.str_value(x.arg2) =#
+#=     return s =#
+#= end =#
+#=  =#
+#= function CSTParser.str_value(x::Union{CSTParser.BinaryOpCall, CSTParser.BinarySyntaxOpCall}) =#
+#=     s = CSTParser.str_value(x.arg1) =#
+#=     s *= CSTParser.str_value(x.op) =#
+#=     s *= CSTParser.str_value(x.arg2) =#
+#=     return s =#
+#= end =#
+#=  =#
+#= function CSTParser.str_value(x::CSTParser.WhereOpCall) =#
+#=     s = CSTParser.str_value(x.arg1) =#
+#=     s *= CSTParser.str_value(x.op) =#
+#=     for a in x.args =#
+#=         s *= CSTParser.str_value(a) =#
+#=     end =#
+#=     return s =#
+#= end =#
+#=  =#
+#= function CSTParser.str_value(x::CSTParser.ConditionalOpCall) =#
+#=     s = CSTParser.str_value(x.cond) =#
+#=     s *= CSTParser.str_value(x.op1) =#
+#=     s *= CSTParser.str_value(x.arg1) =#
+#=     s *= CSTParser.str_value(x.op2) =#
+#=     s *= CSTParser.str_value(x.arg2) =#
+#=     return s =#
+#= end =#
+
 function doc_pass(x, state)
     if x isa CSTParser.EXPR{CSTParser.MacroCall} && x.args[1] isa CSTParser.EXPR{CSTParser.GlobalRefDoc}
         # Align global docstring to:
@@ -114,7 +173,9 @@ function doc_pass(x, state)
         # If the doc is single quoted i.e. "doc", they will be replaced with triple quotes.
         offset = state.offset + x.args[1].fullspan
         doc = x.args[2]
+
         val = CSTParser.str_value(doc)
+
         s = strip(val, ['\n'])
         ds = string("\"\"\"\n", s, "\n", "\"\"\"\n")
 

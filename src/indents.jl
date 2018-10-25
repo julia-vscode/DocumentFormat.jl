@@ -64,6 +64,21 @@ function indent_pass(x, state)
             check_indent(x.args[3], state)
             state.offset += x.args[3].fullspan
         end
+    elseif x isa CSTParser.EXPR{CSTParser.Do}
+        state.offset += x.args[1].fullspan + x.args[2].fullspan + x.args[3].fullspan
+        if x.args[4] isa CSTParser.EXPR{CSTParser.Block}
+            state.edits.indent += 1
+            for a in x.args[4]
+                check_indent(a, state)
+                indent_pass(a, state)
+            end
+            state.edits.indent -= 1
+            check_indent(x.args[5], state)
+            state.offset += x.args[5].fullspan
+        else
+            check_indent(x.args[4], state)
+            state.offset += x.args[4].fullspan
+        end
     elseif x isa CSTParser.EXPR{CSTParser.MacroCall}
         if x.args[1] isa CSTParser.EXPR{CSTParser.GlobalRefDoc}
             state.offset += x.args[1].fullspan
