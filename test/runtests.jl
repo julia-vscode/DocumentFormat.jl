@@ -267,6 +267,15 @@ end
     let x = X, y = Y
     arg
     end""") == str
+
+    str = """
+    y, back = let
+        body
+    end"""
+    @test format("""
+    y,back = let
+      body
+    end""") == str
 end
 
 @testset "struct" begin

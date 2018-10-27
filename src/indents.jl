@@ -49,7 +49,7 @@ function indent_pass(x, state)
         state.edits.indent -= 1
         check_indent(x.args[3], state)
         state.offset += x.args[3].fullspan
-    elseif x isa CSTParser.EXPR{T} where T <: Union{CSTParser.FunctionDef,CSTParser.Macro,CSTParser.For,CSTParser.While,CSTParser.Let,CSTParser.Struct}
+    elseif x isa CSTParser.EXPR{T} where T <: Union{CSTParser.FunctionDef,CSTParser.Macro,CSTParser.For,CSTParser.While,CSTParser.Struct}
         state.offset += x.args[1].fullspan + x.args[2].fullspan
         if x.args[3] isa CSTParser.EXPR{CSTParser.Block}
             state.edits.indent += 1
@@ -182,6 +182,42 @@ function indent_pass(x, state)
                 end
 
             end
+        end
+
+    #= elseif x isa CSTParser.ConditionalOpCall =#
+    #=     @info "CONDITIONAL" =#
+    #=     state.offset += x.fullspan =#
+
+    # let args =
+    #   body
+    # end
+    #
+    # or
+    #
+    # args = let
+    #   body
+    # end
+    elseif x isa CSTParser.EXPR{CSTParser.Let}
+        if length(x.args) > 3
+            state.offset += x.args[1].fullspan + x.args[2].fullspan
+            state.edits.indent += 1
+            for a in x.args[3]
+                check_indent(a, state)
+                indent_pass(a, state)
+            end
+            state.edits.indent -= 1
+            check_indent(x.args[4], state)
+            state.offset += x.args[4].fullspan
+        else
+            state.offset += x.args[1].fullspan
+            state.edits.indent += 1
+            for a in x.args[2]
+                check_indent(a, state)
+                indent_pass(a, state)
+            end
+            state.edits.indent -= 1
+            check_indent(x.args[3], state)
+            state.offset += x.args[3].fullspan
         end
 
     elseif x isa CSTParser.LeafNode
