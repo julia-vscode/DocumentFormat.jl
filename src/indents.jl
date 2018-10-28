@@ -234,7 +234,6 @@ function check_indent(x, state)
     for (i,l) in state.edits.lines
         if state.offset == l+i
             if state.edits.indent*INDENT != i
-                #= @info CSTParser.str_value(CSTParser.get_name(x)), state.edits.indent*INDENT, i, state.offset =#
                 push!(state.edits.edits, (l, state.edits.indent*INDENT - i))
             end
         end

@@ -5,7 +5,10 @@ function operator_pass(x, state)
             ensure_no_space_after(x.op, state, state.offset + x.arg1.fullspan)
         else
             ensure_single_space_after(x.arg1, state, state.offset)
-            ensure_single_space_after(x.op, state, state.offset + x.arg1.fullspan)
+            #= ensure_single_space_after(x.op, state, state.offset + x.arg1.fullspan) =#
+            #= push!(state.edits, Edit(offset+1:offset+x.arg1.fullspan, string(CSTParser.str_value(x.op), " "))) =#
+            offset = state.offset + x.arg1.fullspan
+            push!(state.edits, Edit(offset+1:offset+x.op.fullspan, string(CSTParser.str_value(x.op), " ")))
         end
     elseif x isa CSTParser.WhereOpCall
         ensure_single_space_after(x.op, state, state.offset + x.arg1.fullspan)
@@ -35,6 +38,11 @@ function operator_pass(x, state)
             end
             offset += a.fullspan
         end
+    elseif x isa CSTParser.ConditionalOpCall
+        offset = state.offset + x.cond.fullspan
+        push!(state.edits, Edit(offset+1:offset+x.op1.fullspan, string(CSTParser.str_value(x.op1), " ")))
+        offset += x.arg1.fullspan + x.op1.fullspan
+        push!(state.edits, Edit(offset+1:offset+x.op2.fullspan, string(CSTParser.str_value(x.op2), " ")))
     end
 end
 
@@ -44,7 +52,8 @@ function tuple_pass(x, state)
         n = length(x)
         for (i, a) in enumerate(x)
             if a isa CSTParser.PUNCTUATION && a.kind == Tokens.COMMA && i !=n && !(x.args[i+1] isa CSTParser.PUNCTUATION)
-                ensure_single_space_after(a, state, offset)
+                #= ensure_single_space_after(a, state, offset) =#
+                push!(state.edits, Edit(offset+1:offset+a.fullspan, string(CSTParser.str_value(a), " ")))
             elseif i != n
                 ensure_no_space_after(a, state, offset)
             end
@@ -66,6 +75,11 @@ function curly_pass(x, state)
     end
 end
 
+#= function conditional_pass(x, state) =#
+#=     if x isa CSTParser.ConditionalOpCall =#
+#=     end =#
+#= end =#
+
 function call_pass(x, state)
     if x isa CSTParser.EXPR{CSTParser.Call}
         offset = state.offset + x.args[1].fullspan
@@ -73,7 +87,8 @@ function call_pass(x, state)
         for (i, a) in enumerate(x)
             i == 1 && continue
             if a isa CSTParser.PUNCTUATION && a.kind == Tokens.COMMA
-                ensure_single_space_after(a, state, offset)
+                #= ensure_single_space_after(a, state, offset) =#
+                push!(state.edits, Edit(offset+1:offset+a.fullspan, string(CSTParser.str_value(a), " ")))
             # elseif a isa CSTParser.EXPR{CSTParser.Parameters}
             elseif i != n && !(x.args[i + 1] isa CSTParser.EXPR{CSTParser.Parameters})
                 ensure_no_space_after(a, state, offset)

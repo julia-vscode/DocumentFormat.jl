@@ -16,6 +16,8 @@ end
     @test format("( a, b)") == "(a, b)"
     @test format("(a, b )") == "(a, b)"
     @test format("(a, b ,)") == "(a, b,)"
+    #= @test format("""(a,    b , =#
+    #=                     c)""") == "(a, b, c)" =#
 end
 @testset "curly" begin
     @test format("X{a,b}") == "X{a,b}"

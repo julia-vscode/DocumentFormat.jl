@@ -51,7 +51,6 @@ function pass(x, state, f = (x,state)->nothing)
 end
 
 
-
 function ensure_single_space_after(x, state, offset)
     if x.fullspan == last(x.span)
         if x isa CSTParser.OPERATOR
