@@ -77,6 +77,9 @@ end
 function apply(text, edit::Edit{UnitRange{Int}})
     string(text[1:prevind(text, first(edit.loc))], edit.text, text[nextind(text, last(edit.loc)):end])
 end
+
+include("pretty.jl")
 include("passes.jl")
 include("indents.jl")
+
 end

@@ -5,10 +5,8 @@ function operator_pass(x, state)
             ensure_no_space_after(x.op, state, state.offset + x.arg1.fullspan)
         else
             ensure_single_space_after(x.arg1, state, state.offset)
-            #= ensure_single_space_after(x.op, state, state.offset + x.arg1.fullspan) =#
-            #= push!(state.edits, Edit(offset+1:offset+x.arg1.fullspan, string(CSTParser.str_value(x.op), " "))) =#
+            ensure_single_space_after(x.op, state, state.offset + x.arg1.fullspan)
             offset = state.offset + x.arg1.fullspan
-            push!(state.edits, Edit(offset+1:offset+x.op.fullspan, string(CSTParser.str_value(x.op), " ")))
         end
     elseif x isa CSTParser.WhereOpCall
         ensure_single_space_after(x.op, state, state.offset + x.arg1.fullspan)
@@ -38,11 +36,11 @@ function operator_pass(x, state)
             end
             offset += a.fullspan
         end
-    elseif x isa CSTParser.ConditionalOpCall
-        offset = state.offset + x.cond.fullspan
-        push!(state.edits, Edit(offset+1:offset+x.op1.fullspan, string(CSTParser.str_value(x.op1), " ")))
-        offset += x.arg1.fullspan + x.op1.fullspan
-        push!(state.edits, Edit(offset+1:offset+x.op2.fullspan, string(CSTParser.str_value(x.op2), " ")))
+    #= elseif x isa CSTParser.ConditionalOpCall =#
+    #=     offset = state.offset + x.cond.fullspan =#
+    #=     push!(state.edits, Edit(offset+1:offset+x.op1.fullspan, string(layout(x.op1), " "))) =#
+    #=     offset += x.arg1.fullspan + x.op1.fullspan =#
+    #=     push!(state.edits, Edit(offset+1:offset+x.op2.fullspan, string(layout(x.op2), " "))) =#
     end
 end
 
@@ -52,8 +50,7 @@ function tuple_pass(x, state)
         n = length(x)
         for (i, a) in enumerate(x)
             if a isa CSTParser.PUNCTUATION && a.kind == Tokens.COMMA && i !=n && !(x.args[i+1] isa CSTParser.PUNCTUATION)
-                #= ensure_single_space_after(a, state, offset) =#
-                push!(state.edits, Edit(offset+1:offset+a.fullspan, string(CSTParser.str_value(a), " ")))
+                ensure_single_space_after(a, state, offset)
             elseif i != n
                 ensure_no_space_after(a, state, offset)
             end
@@ -75,11 +72,6 @@ function curly_pass(x, state)
     end
 end
 
-#= function conditional_pass(x, state) =#
-#=     if x isa CSTParser.ConditionalOpCall =#
-#=     end =#
-#= end =#
-
 function call_pass(x, state)
     if x isa CSTParser.EXPR{CSTParser.Call}
         offset = state.offset + x.args[1].fullspan
@@ -87,8 +79,7 @@ function call_pass(x, state)
         for (i, a) in enumerate(x)
             i == 1 && continue
             if a isa CSTParser.PUNCTUATION && a.kind == Tokens.COMMA
-                #= ensure_single_space_after(a, state, offset) =#
-                push!(state.edits, Edit(offset+1:offset+a.fullspan, string(CSTParser.str_value(a), " ")))
+                ensure_single_space_after(a, state, offset)
             # elseif a isa CSTParser.EXPR{CSTParser.Parameters}
             elseif i != n && !(x.args[i + 1] isa CSTParser.EXPR{CSTParser.Parameters})
                 ensure_no_space_after(a, state, offset)
@@ -118,64 +109,6 @@ function forloop_pass(x, state)
     end
 end
 
-# TODO: move this to CSTParser?
-function CSTParser.str_value(x::CSTParser.PUNCTUATION)
-    x.kind == Tokens.LPAREN && return "("
-    x.kind == Tokens.LBRACE && return "{"
-    x.kind == Tokens.LSQUARE && return "["
-    x.kind == Tokens.RPAREN && return ")"
-    x.kind == Tokens.RBRACE && return "}"
-    x.kind == Tokens.RSQUARE && return "]"
-    x.kind == Tokens.COMMA && return ","
-    x.kind == Tokens.SEMICOLON && return ";"
-    x.kind == Tokens.AT_SIGN && return "@"
-    return ""
-end
-
-function CSTParser.str_value(x::CSTParser.EXPR)
-    s = ""
-    for a in x
-        s *= CSTParser.str_value(a)
-    end
-    return s
-end
-
-function CSTParser.str_value(x::CSTParser.UnarySyntaxOpCall)
-    s = CSTParser.str_value(x.arg1)
-    s *= CSTParser.str_value(x.arg2)
-    return s
-end
-
-#= function CSTParser.str_value(x::CSTParser.UnaryOpCall) =#
-#=     s = CSTParser.str_value(x.op) =#
-#=     s *= CSTParser.str_value(x.arg2) =#
-#=     return s =#
-#= end =#
-#=  =#
-#= function CSTParser.str_value(x::Union{CSTParser.BinaryOpCall, CSTParser.BinarySyntaxOpCall}) =#
-#=     s = CSTParser.str_value(x.arg1) =#
-#=     s *= CSTParser.str_value(x.op) =#
-#=     s *= CSTParser.str_value(x.arg2) =#
-#=     return s =#
-#= end =#
-#=  =#
-#= function CSTParser.str_value(x::CSTParser.WhereOpCall) =#
-#=     s = CSTParser.str_value(x.arg1) =#
-#=     s *= CSTParser.str_value(x.op) =#
-#=     for a in x.args =#
-#=         s *= CSTParser.str_value(a) =#
-#=     end =#
-#=     return s =#
-#= end =#
-#=  =#
-#= function CSTParser.str_value(x::CSTParser.ConditionalOpCall) =#
-#=     s = CSTParser.str_value(x.cond) =#
-#=     s *= CSTParser.str_value(x.op1) =#
-#=     s *= CSTParser.str_value(x.arg1) =#
-#=     s *= CSTParser.str_value(x.op2) =#
-#=     s *= CSTParser.str_value(x.arg2) =#
-#=     return s =#
-#= end =#
 
 function doc_pass(x, state)
     if x isa CSTParser.EXPR{CSTParser.MacroCall} && x.args[1] isa CSTParser.EXPR{CSTParser.GlobalRefDoc}
@@ -187,19 +120,20 @@ function doc_pass(x, state)
         #
         # If the doc is single quoted i.e. "doc", they will be replaced with triple quotes.
         offset = state.offset + x.args[1].fullspan
-        doc = x.args[2]
 
-        val = CSTParser.str_value(doc)
-
-        s = strip(val, ['\n'])
-        ds = string("\"\"\"\n", s, "\n", "\"\"\"\n")
-
-        # Check if docstring needs to be edited
-        if length(ds) != doc.fullspan || s != val
-            # Remove previous docstring
-            push!(state.edits, Edit(offset+1:offset+doc.fullspan, ""))
-            # Append newly formatted docstring
-            push!(state.edits, Edit(offset, ds))
+        s = "\"\"\"\n"
+        if x.args[2] isa CSTParser.EXPR{CSTParser.StringH}
+            for a in x.args[2]
+                a isa CSTParser.LITERAL ? s *= layout(a; in_doc=true) : s *= layout(a)
+            end
+        else
+            s *= layout(x.args[2]; in_doc=true)
         end
+        s *= "\"\"\"\n"
+
+        # Remove previous docstring
+        push!(state.edits, Edit(offset+1:offset+x.args[2].fullspan, ""))
+        # Append newly formatted docstring
+        push!(state.edits, Edit(offset, s))
     end
 end

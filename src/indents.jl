@@ -81,10 +81,12 @@ function indent_pass(x, state)
         end
     elseif x isa CSTParser.EXPR{CSTParser.MacroCall}
         if x.args[1] isa CSTParser.EXPR{CSTParser.GlobalRefDoc}
+            #= for a in x =#
+            #=     indent_pass(a, state) =#
+            #= end =#
             state.offset += x.args[1].fullspan
 
-            doc = x.args[2]
-            doc_strs = split(CSTParser.str_value(doc), "\n")
+            doc_strs = split(CSTParser.str_value(x.args[2]), "\n")
 
             state.offset += 4
             for (i, s) in enumerate(doc_strs)
