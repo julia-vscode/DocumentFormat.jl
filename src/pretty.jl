@@ -1,26 +1,10 @@
-# Prettier interface
-#
-# Doc is a concrete syntax tree (CST.AbstractEXPR)
-#
-# (<|>) merge :: Doc -> Doc -> Doc
-# (<>) concat :: Doc -> Doc -> Doc
-# nil :: Doc
-# text :: String -> Doc
-# line :: Doc
-# nest :: Int -> Doc -> Doc
-# layout :: Doc -> String
-# pretty :: Int -> Doc -> String
-# group :: Doc -> Doc
-# flatten :: Doc -> Doc
-#= merge(x1::T, x2::T) where {T <: CSTParser.AbstractEXPR} = nothing =#
-nil() = CSTParser.NOTHING
-text(s::AbstractString, cont=false) = CSTParser.parse(s, cont)
-line() = CSTParser.LITERAL(1, 1:1, "\n", Tokens.NEWLINE_WS)
-nest(i::Int, x::CSTParser.AbstractEXPR) = nothing
-layout(x::CSTParser.AbstractEXPR) = CSTParser.str_value(x)
-layout(x::CSTParser.LITERAL; in_doc=false) = x.kind == Tokens.STRING && !in_doc ? string("\"", x.val, "\"") : x.val
 
-function layout(x::CSTParser.PUNCTUATION)
+const WS_INDENT = repeat(" ", 4);
+
+pretty(x::CSTParser.AbstractEXPR) = CSTParser.str_value(x)
+pretty(x::CSTParser.LITERAL; in_doc=false) = x.kind == Tokens.STRING && !in_doc ? string("\"", x.val, "\"") : x.val
+
+function pretty(x::CSTParser.PUNCTUATION)
     x.kind == Tokens.LPAREN && return "("
     x.kind == Tokens.LBRACE && return "{"
     x.kind == Tokens.LSQUARE && return "["
@@ -33,106 +17,107 @@ function layout(x::CSTParser.PUNCTUATION)
     return ""
 end
 
-layout(x::CSTParser.KEYWORD) = x.kind |> string |> lowercase
-layout(x::CSTParser.EXPR{T}) where {T} = mapreduce(layout, *, x.args; init="")
+pretty(x::CSTParser.KEYWORD) = x.kind |> string |> lowercase
+pretty(x::CSTParser.EXPR{T}) where {T} = mapreduce(pretty, *, x.args; init="")
+#= pretty(x::CSTParser.AbstractEXPR) = mapreduce(pretty, *, x; init="") =#
 
-function layout(x::CSTParser.EXPR{CSTParser.StringH}; in_doc=false)
+function pretty(x::CSTParser.EXPR{CSTParser.StringH}; in_doc=false)
     s = in_doc ? "" : "\""
     for a in x
         if a isa CSTParser.LITERAL
-            s *= layout(a; in_doc=in_doc)
+            s *= pretty(a; in_doc=in_doc)
         else
-            s *= layout(a)
+            s *= pretty(a)
         end
     end
     s *= in_doc ? "" : "\""
 end
 
-function layout(x::CSTParser.EXPR{CSTParser.MacroCall})
+function pretty(x::CSTParser.EXPR{CSTParser.MacroCall})
     if x.args[1] isa CSTParser.EXPR{CSTParser.GlobalRefDoc}
         s = "\"\"\"\n"
-        s *= layout(x.args[2]; in_doc=true)
+        s *= pretty(x.args[2]; in_doc=true)
         s *= "\"\"\"\n"
-        s *= layout(x.args[3])
+        s *= pretty(x.args[3])
         return s
     end
-    s = layout(x.args[1])
+    s = pretty(x.args[1])
     for a in x.args[2:end]
-        s *= " " * layout(a)
+        s *= " " * pretty(a)
     end
     s
 end
 
-function layout(x::CSTParser.EXPR{T}) where T <: Union{CSTParser.FunctionDef,CSTParser.Macro,CSTParser.For,CSTParser.While,CSTParser.Struct}
+function pretty(x::CSTParser.EXPR{T}) where T <: Union{CSTParser.FunctionDef,CSTParser.Macro,CSTParser.For,CSTParser.While,CSTParser.Struct}
     s = "\n"
-    s *= layout(x.args[1])
-    s *= " " * layout(x.args[2]) * "\n"
+    s *= pretty(x.args[1])
+    s *= " " * pretty(x.args[2]) * "\n"
     if x.args[3] isa CSTParser.EXPR{CSTParser.Block}
         for a in x.args[3]
-            s *= layout(a) * "\n"
+            s *= WS_INDENT * pretty(a) * "\n"
         end
-        s *= layout(x.args[4]) * "\n"
+        s *= pretty(x.args[4]) * "\n"
     else
-        s *= layout(x.args[3]) * "\n"
+        s *= pretty(x.args[3]) * "\n"
     end
     s
 end
 
-function layout(x::CSTParser.EXPR{CSTParser.Mutable})
-    s = layout(x.args[1])
-    s *= " " * layout(x.args[2])
-    s *= " " * layout(x.args[3]) * "\n"
+function pretty(x::CSTParser.EXPR{CSTParser.Mutable})
+    s = pretty(x.args[1])
+    s *= " " * pretty(x.args[2])
+    s *= " " * pretty(x.args[3]) * "\n"
     if x.args[4] isa CSTParser.EXPR{CSTParser.Block}
         for a in x.args[4]
-            s *= layout(a) * "\n"
+            s *= WS_INDENT * pretty(a) * "\n"
         end
-        s *= layout(x.args[5]) * "\n"
+        s *= pretty(x.args[5]) * "\n"
     else
-        s *= layout(x.args[4]) * "\n"
+        s *= pretty(x.args[4]) * "\n"
     end
     s
 end
 
-#= function layout(x::CSTParser.EXPR{CSTParser.Try}) =#
-#=     s = layout(x.args[1]) =#
+#= function pretty(x::CSTParser.EXPR{CSTParser.Try}) =#
+#=     s = pretty(x.args[1]) =#
 #=     for a in x.args[2] =#
-#=         s *= layout(a) * "\n" =#
+#=         s *= pretty(a) * "\n" =#
 #=     end =#
-#=     s *= layout(x.args[3]) * " " * layout(x.args[4]) =#
+#=     s *= pretty(x.args[3]) * " " * pretty(x.args[4]) =#
 #=     for a in x.args[5] =#
-#=         s *= layout(a) * "\n" =#
+#=         s *= pretty(a) * "\n" =#
 #=     end =#
-#=     s *= layout(x.args[6]) * "\n" =#
+#=     s *= pretty(x.args[6]) * "\n" =#
 #=     s =#
 #= end =#
 
-function layout(x::CSTParser.EXPR{T}) where T <: Union{CSTParser.Using,CSTParser.Import}
+function pretty(x::CSTParser.EXPR{T}) where T <: Union{CSTParser.Using,CSTParser.Import}
     s = ""
     for (i, a) in enumerate(x.args)
         if i == 1
-            s *= string(layout(a), " ")
+            s *= string(pretty(a), " ")
             continue
         end
         if (a isa CSTParser.PUNCTUATION && a.kind == Tokens.COMMA) || (a isa CSTParser.OPERATOR && a.kind == Tokens.COLON)
-            s *= string(layout(a), " ")
+            s *= string(pretty(a), " ")
         else
-            s *= string(" ", layout(a))
+            s *= string(" ", pretty(a))
         end
     end
     return s * "\n"
 end
 
-function layout(x::T) where T <: Union{CSTParser.BinaryOpCall,CSTParser.BinarySyntaxOpCall}
+function pretty(x::T) where T <: Union{CSTParser.BinaryOpCall,CSTParser.BinarySyntaxOpCall}
     #= s = CSTParser.defines_function(x) ? "\n" : "" =#
     s = ""
     if CSTParser.precedence(x.op) in (8,13,14,16)
-        s *= layout(x.arg1)
-        s *= layout(x.op)
-        s *= layout(x.arg2)
+        s *= pretty(x.arg1)
+        s *= pretty(x.op)
+        s *= pretty(x.arg2)
     else
-        s *= layout(x.arg1)
-        s *= " " * layout(x.op) * " "
-        s *= layout(x.arg2)
+        s *= pretty(x.arg1)
+        s *= " " * pretty(x.op) * " "
+        s *= pretty(x.arg2)
     end
     if CSTParser.defines_function(x)
         s *= "\n"
@@ -140,87 +125,87 @@ function layout(x::T) where T <: Union{CSTParser.BinaryOpCall,CSTParser.BinarySy
     s
 end
 
-function layout(x::CSTParser.ConditionalOpCall)
-    s = layout(x.cond)
-    s *= " " * layout(x.op1) * " "
-    s *= layout(x.arg1)
-    s *= " " * layout(x.op2) * " "
-    s *= layout(x.arg2)
+function pretty(x::CSTParser.ConditionalOpCall)
+    s = pretty(x.cond)
+    s *= " " * pretty(x.op1) * " "
+    s *= pretty(x.arg1)
+    s *= " " * pretty(x.op2) * " "
+    s *= pretty(x.arg2)
     s
 end
 
-function layout(x::CSTParser.WhereOpCall)
-    s = layout(x.arg1)
-    s *= " " * layout(x.op) * " "
-    s *= mapreduce(layout, *, x.args; init="")
+function pretty(x::CSTParser.WhereOpCall)
+    s = pretty(x.arg1)
+    s *= " " * pretty(x.op) * " "
+    s *= mapreduce(pretty, *, x.args; init="")
     s
 end
 
-function layout(x::CSTParser.EXPR{CSTParser.Begin})
-    s = layout(x.args[1]) * "\n"
+function pretty(x::CSTParser.EXPR{CSTParser.Begin})
+    s = pretty(x.args[1]) * "\n"
     for a in x.args[2]
-        s *= layout(a) * "\n"
+        s *= WS_INDENT * pretty(a) * "\n"
     end
-    s *= layout(x.args[3])  * "\n"
+    s *= pretty(x.args[3])  * "\n"
     s
 end
 
-function layout(x::CSTParser.EXPR{CSTParser.Quote})
+function pretty(x::CSTParser.EXPR{CSTParser.Quote})
     if x.args[1] isa CSTParser.KEYWORD && x.args[1].kind == Tokens.QUOTE
-        s = layout(x.args[1]) * "\n"
+        s = pretty(x.args[1]) * "\n"
         for a in x.args[2]
-            s *= layout(a) * "\n"
+            s *= WS_INDENT * pretty(a) * "\n"
         end
-        s *= layout(x.args[3]) * "\n"
+        s *= pretty(x.args[3]) * "\n"
         return s
     end
-    mapreduce(layout, *, x.args; init="")
+    mapreduce(pretty, *, x.args; init="")
 end
 
-function layout(x::CSTParser.EXPR{CSTParser.Let})
+function pretty(x::CSTParser.EXPR{CSTParser.Let})
     s = ""
     if length(x.args) > 3
-        s *= layout(x.args[1]) * " " * layout(x.args[2])
+        s *= pretty(x.args[1]) * " " * pretty(x.args[2])
         s *= "\n"
         for a in x.args[3]
-            s *= layout(a) * "\n"
+            s *= pretty(a) * "\n"
         end
-        s *= layout(x.args[4]) * "\n"
+        s *= pretty(x.args[4]) * "\n"
     else
-        s *= layout(x.args[1])
+        s *= pretty(x.args[1])
         s *= "\n"
         for a in x.args[2]
-            s *= layout(a) * "\n"
+            s *= pretty(a) * "\n"
         end
-        s *= layout(x.args[3]) * "\n"
+        s *= pretty(x.args[3]) * "\n"
     end
     s
 end
 
-layout(x::CSTParser.UnaryOpCall) = layout(x.op) * layout(x.arg)
-layout(x::CSTParser.UnarySyntaxOpCall) = layout(x.arg1) * layout(x.arg2)
-layout(x::CSTParser.EXPR{CSTParser.Return}) = layout(x.args[1]) * " " * layout(x.args[2])
-layout(x::CSTParser.EXPR{CSTParser.Parameters}) = "; " * mapreduce(layout, *, x.args; init="")
+pretty(x::CSTParser.UnaryOpCall) = pretty(x.op) * pretty(x.arg)
+pretty(x::CSTParser.UnarySyntaxOpCall) = pretty(x.arg1) * pretty(x.arg2)
+pretty(x::CSTParser.EXPR{CSTParser.Return}) = pretty(x.args[1]) * " " * pretty(x.args[2])
+pretty(x::CSTParser.EXPR{CSTParser.Parameters}) = "; " * mapreduce(pretty, *, x.args; init="")
 
-function layout(x::CSTParser.EXPR{CSTParser.Comparison})
+function pretty(x::CSTParser.EXPR{CSTParser.Comparison})
     s = ""
     for a in x
         if a isa CSTParser.OPERATOR
-            s *= " " * layout(a) * " "
+            s *= " " * pretty(a) * " "
         else
-            s *= layout(a)
+            s *= pretty(a)
         end
     end
     s
 end
 
-function layout(x::CSTParser.EXPR{T}) where T <: Union{CSTParser.TupleH,CSTParser.ChainOpCall,CSTParser.Call}
+function pretty(x::CSTParser.EXPR{T}) where T <: Union{CSTParser.TupleH,CSTParser.ChainOpCall,CSTParser.Call}
     s = ""
     for a in x
         if a isa CSTParser.PUNCTUATION && a.kind == Tokens.COMMA
-            s *= layout(a) * " "
+            s *= pretty(a) * " "
         else
-            s *= layout(a)
+            s *= pretty(a)
         end
     end
     s

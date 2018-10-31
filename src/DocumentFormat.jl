@@ -79,6 +79,7 @@ function apply(text, edit::Edit{UnitRange{Int}})
 end
 
 include("pretty.jl")
+#= include("fdoc.jl") =#
 include("passes.jl")
 include("indents.jl")
 
