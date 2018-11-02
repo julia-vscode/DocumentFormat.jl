@@ -7,7 +7,15 @@ pretty(x::T, width) where {T<:Union{CSTParser.AbstractEXPR, Vector}} = mapreduce
 pretty(x::T, width) where {T <: Union{CSTParser.IDENTIFIER,CSTParser.LITERAL}} = x.val
 pretty(x::CSTParser.OPERATOR, width) = string(CSTParser.Expr(x))
 pretty(x::CSTParser.EXPR{CSTParser.MacroName}, width) = string(CSTParser.Expr(x))
-pretty(x::CSTParser.KEYWORD, width) = x.kind |> string |> lowercase
+#= pretty(x::CSTParser.KEYWORD, width) = x.kind |> string |> lowercase =#
+
+function pretty(x::CSTParser.KEYWORD, width)
+    s = x.kind |> string |> lowercase
+    x.kind == Tokens.END && return s * NL
+    x.kind == Tokens.DO && return ws(1) * s * ws(1)
+    #= x.kind == Tokens.DO && (return ws(1) * s * ws(1)) =#
+    return s * ws(1)
+end
 
 function pretty(x::CSTParser.PUNCTUATION, width)
     x.kind == Tokens.LPAREN && return "("
@@ -19,12 +27,11 @@ function pretty(x::CSTParser.PUNCTUATION, width)
     x.kind == Tokens.COMMA && return ","
     x.kind == Tokens.SEMICOLON && return ";"
     x.kind == Tokens.AT_SIGN && return "@"
+    x.kind == Tokens.DOT && return "."
     return ""
 end
 
-pretty(x::CSTParser.EXPR{CSTParser.Return}, width) = pretty(x.args[1], width) * ws(1) * pretty(x.args[2], width)
 pretty(x::CSTParser.EXPR{CSTParser.Parameters}, width) = "; " * pretty(x.args, width)
-
 
 pretty(x::CSTParser.LITERAL, width; in_doc=false) = x.kind == Tokens.STRING && !in_doc ? string("\"", x.val, "\"") : x.val
 function pretty(x::CSTParser.EXPR{CSTParser.StringH}, width; in_doc=false)
@@ -40,27 +47,23 @@ function pretty(x::CSTParser.EXPR{CSTParser.StringH}, width; in_doc=false)
 end
 
 function pretty(x::CSTParser.EXPR{CSTParser.MacroCall}, width)
-    s = ""
     if x.args[1] isa CSTParser.EXPR{CSTParser.GlobalRefDoc}
-        s *= "\"\"\"\n"
+        s = "\"\"\"\n"
         s *= strip(pretty(x.args[2], width; in_doc=true), ['\n']) * NL
         s *= "\"\"\"\n"
-        s *= pretty(x.args[3], width)
-    else
-        s *= pretty(x.args[1], width)
-        for a in x.args[2:end]
-            s *= ws(1) * pretty(a, width)
-        end
+        return s * pretty(x.args[3], width)
     end
-    s
+    pretty(x.args[1], width) * ws(1) * pretty(x.args[2:end], width)
 end
 
 function pretty(x::CSTParser.EXPR{CSTParser.Block}, width; indent=false)
     s = ""
-    indent && (width += INDENT_WIDTH)
     for a in x
         if indent
-            s *= join(ws(INDENT_WIDTH) .* split(pretty(a, width), "\n"), "\n") * NL
+            ss = split(pretty(a, width+INDENT_WIDTH), "\n")
+            #= ss[end] == "" && (ss = s[1:end-1]) =#
+            #= @info length(ss), ss =#
+            s *= join(ws(INDENT_WIDTH) .* ss, "\n") * NL
         else
             s *= pretty(a, width)
         end
@@ -68,67 +71,72 @@ function pretty(x::CSTParser.EXPR{CSTParser.Block}, width; indent=false)
     s
 end
 
-function pretty(x::CSTParser.EXPR{T}, width) where T <: Union{CSTParser.FunctionDef,CSTParser.Macro,CSTParser.For,CSTParser.While,CSTParser.Struct}
-    s = pretty(x.args[1], width) * ws(1) * pretty(x.args[2], width) * NL
+function pretty(x::CSTParser.EXPR{CSTParser.FunctionDef}, width)
+    s = pretty(x.args[1], width) * pretty(x.args[2], width)
     if x.args[3] isa CSTParser.EXPR{CSTParser.Block}
+        s *= NL
         s *= pretty(x.args[3], width; indent=true)
-        s *= pretty(x.args[4], width) * NL
+        s *= pretty(x.args[4], width)
     else
-        s *= pretty(x.args[3], width) * NL
+        s *= ws(1) * pretty(x.args[3], width)
     end
     s
+end
+
+function pretty(x::CSTParser.EXPR{T}, width) where T <: Union{CSTParser.Macro,CSTParser.For,CSTParser.While,CSTParser.Struct}
+    s = pretty(x.args[1], width) * pretty(x.args[2], width)
+    s *= length(x.args[3]) == 0 ? " " : NL * pretty(x.args[3], width; indent=true)
+    s * pretty(x.args[4], width)
 end
 
 
 function pretty(x::CSTParser.EXPR{CSTParser.Mutable}, width)
-    s = pretty(x.args[1], width) * ws(1) * pretty(x.args[2], width) * ws(1) * pretty(x.args[3], width) * NL
-    if x.args[4] isa CSTParser.EXPR{CSTParser.Block}
-        s *= pretty(x.args[4], width; indent=true)
-        s *= pretty(x.args[5], width) * NL
-    else
-        s *= pretty(x.args[4], width) * NL
-    end
-    s
+    s = pretty(x.args[1:3], width)
+    s *= length(x.args[4]) == 0 ? " " : NL * pretty(x.args[4], width; indent=true)
+    s * pretty(x.args[5], width)
 end
 
 function pretty(x::CSTParser.EXPR{CSTParser.Do}, width)
-    s = pretty(x.args[1], width) * ws(1) * pretty(x.args[2], width) * ws(1) * pretty(x.args[3], width) * NL
+    s = pretty(x.args[1:3], width)
     if x.args[4] isa CSTParser.EXPR{CSTParser.Block}
         s *= pretty(x.args[4], width; indent=true)
-        s *= pretty(x.args[5], width) * NL
+        s *= pretty(x.args[5], width)
     else
-        s *= pretty(x.args[4], width) * NL
+        s *= pretty(x.args[4], width)
     end
     s
 end
 
 function pretty(x::CSTParser.EXPR{CSTParser.Try}, width)
-    s = pretty(x.args[1], width) * NL
+    s = pretty(x.args[1], width)
     s *= pretty(x.args[2], width; indent=true)
-    s *= pretty(x.args[3], width) * ws(1) * pretty(x.args[4], width) * NL
+    s *= pretty(x.args[3], width) * pretty(x.args[4], width) * NL
     s *= pretty(x.args[5], width; indent=true)
-    s *= pretty(x.args[6]) * NL
+    s *= pretty(x.args[6])
     if length(x.args) > 6
+        s *= NL
         s *= pretty(x.args[7], width; indent=true)
-        s *= pretty(x.args[8]) * NL
+        s *= pretty(x.args[8])
     end
     s
 end
 
-function pretty(x::CSTParser.EXPR{T}, width) where T <: Union{CSTParser.Using,CSTParser.Import}
-    s = ""
-    for (i, a) in enumerate(x.args)
-        if i == 1
-            s *= pretty(a, width) * ws(1)
-            continue
-        end
+function pretty(x::CSTParser.EXPR{CSTParser.ModuleH}, width)
+    s = pretty(x.args[1], width) * pretty(x.args[2], width) * NL
+    s *= pretty(x.args[3], width)
+    s * pretty(x.args[4])
+end
+
+function pretty(x::CSTParser.EXPR{T}, width) where T <: Union{CSTParser.Using,CSTParser.Import,CSTParser.Export}
+    s = pretty(x.args[1], width)
+    for a in x.args[2:end]
         if (a isa CSTParser.PUNCTUATION && a.kind == Tokens.COMMA) || (a isa CSTParser.OPERATOR && a.kind == Tokens.COLON)
             s *= pretty(a, width) * ws(1)
         else
-            s *= ws(1) * pretty(a, width)
+            s *= pretty(a, width)
         end
     end
-    return s * NL
+    s * NL
 end
 
 function pretty(x::T, width) where T <: Union{CSTParser.BinaryOpCall,CSTParser.BinarySyntaxOpCall}
@@ -143,7 +151,7 @@ function pretty(x::T, width) where T <: Union{CSTParser.BinaryOpCall,CSTParser.B
         s *= ws(1) * pretty(x.op, width) * ws(1)
         s *= pretty(x.arg2, width)
     end
-    CSTParser.defines_function(x) && (s *= NL)
+    #= CSTParser.defines_function(x) && (s *= NL) =#
     s
 end
 
@@ -162,24 +170,16 @@ function pretty(x::CSTParser.WhereOpCall, width)
 end
 
 function pretty(x::CSTParser.EXPR{CSTParser.Begin}, width)
-    s = pretty(x.args[1], width) * NL
-    if x.args[2] isa CSTParser.EXPR{CSTParser.Block}
-        s *= pretty(x.args[2], width; indent=true)
-    else
-        s *= pretty(x.args[2], width)
-    end
-    s * pretty(x.args[3], width)  * NL
+    s = pretty(x.args[1], width)
+    s *= pretty(x.args[2], width; indent=true)
+    s * pretty(x.args[3], width)
 end
 
 function pretty(x::CSTParser.EXPR{CSTParser.Quote}, width)
     if x.args[1] isa CSTParser.KEYWORD && x.args[1].kind == Tokens.QUOTE
-        s = pretty(x.args[1]) * NL
-        if x.args[2] isa CSTParser.EXPR{CSTParser.Block}
-            s *= pretty(x.args[2], width; indent=true)
-        else
-            s *= pretty(x.args[2], width)
-        end
-        return s * pretty(x.args[3], width) * NL
+        s = pretty(x.args[1])
+        s *= length(x.args[2]) == 0 ? " " : NL * pretty(x.args[2], width; indent=true)
+        return s * pretty(x.args[3], width)
     end
     pretty(x.args, width)
 end
@@ -187,41 +187,25 @@ end
 function pretty(x::CSTParser.EXPR{CSTParser.Let}, width)
     s = ""
     if length(x.args) > 3
-        s *= pretty(x.args[1], width) * ws(1) * pretty(x.args[2], width) * NL
-        #= s *= x.args[3] isa CSTParser.EXPR{CSTParser.Block} ? pretty(x.args[3], width; indent=true) : pretty(x.args[3], width) =#
-        if x.args[3] isa CSTParser.EXPR{CSTParser.Block}
-            s *= pretty(x.args[3], width; indent=true)
-        else
-            s *= pretty(x.args[3], width)
-        end
-        s *= pretty(x.args[4], width) * NL
+        s *= pretty(x.args[1:2], width)
+        s *= length(x.args[3]) == 0 ? " " : NL * pretty(x.args[3], width; indent=true)
+        s *= pretty(x.args[4], width)
     else
-        s *= pretty(x.args[1], width) * NL
-        if x.args[2] isa CSTParser.EXPR{CSTParser.Block}
-            s *= pretty(x.args[2], width; indent=true)
-        else
-            s *= pretty(x.args[2], width)
-        end
-        s *= pretty(x.args[3], width) * NL
+        s *= pretty(x.args[1], width)
+        s *= length(x.args[2]) == 0 ? " " : NL * pretty(x.args[2], width; indent=true)
+        s *= pretty(x.args[3], width)
     end
     s
 end
 
 function pretty(x::CSTParser.EXPR{CSTParser.If}, width)
-    s = ""
-    if x.args[1] isa CSTParser.KEYWORD && x.args[1] == Tokens.IF
-        s *= pretty(x.args[1], width) * ws(1) * pretty(x.args[2], width) * NL
-        s *= pretty(x.args[3], width; indent=true)
-        s *= pretty(x.args[4], width) * NL
+    s = pretty(x.args[1:2], width) * NL
+    s *= pretty(x.args[3], width; indent=true)
+    s *= pretty(x.args[4], width)
+    if length(x.args) > 4
+        s *= NL
         s *= pretty(x.args[5], width; indent=true)
-        s *= pretty(x.args[6], width) * NL
-    else
-        s *= pretty(x.args[1], width) * NL
-        s *= pretty(x.args[2], width; indent=true)
-        if length(x.args[4]) > 2
-            s *= pretty(x.args[3], width) * NL
-            s *= pretty(x.args[4], width; indent=true)
-        end
+        s *= pretty(x.args[6], width)
     end
     s
 end
