@@ -114,6 +114,7 @@ function CSTParser.str_value(x::CSTParser.PUNCTUATION)
     x.kind == Tokens.COMMA && return ","
     x.kind == Tokens.SEMICOLON && return ";"
     x.kind == Tokens.AT_SIGN && return "@"
+    x.kind == Tokens.DOT && return "."
     return ""
 end
 
@@ -130,37 +131,6 @@ function CSTParser.str_value(x::CSTParser.UnarySyntaxOpCall)
     s *= CSTParser.str_value(x.arg2)
     return s
 end
-
-#= function CSTParser.str_value(x::CSTParser.UnaryOpCall) =#
-#=     s = CSTParser.str_value(x.op) =#
-#=     s *= CSTParser.str_value(x.arg2) =#
-#=     return s =#
-#= end =#
-#=  =#
-#= function CSTParser.str_value(x::Union{CSTParser.BinaryOpCall, CSTParser.BinarySyntaxOpCall}) =#
-#=     s = CSTParser.str_value(x.arg1) =#
-#=     s *= CSTParser.str_value(x.op) =#
-#=     s *= CSTParser.str_value(x.arg2) =#
-#=     return s =#
-#= end =#
-#=  =#
-#= function CSTParser.str_value(x::CSTParser.WhereOpCall) =#
-#=     s = CSTParser.str_value(x.arg1) =#
-#=     s *= CSTParser.str_value(x.op) =#
-#=     for a in x.args =#
-#=         s *= CSTParser.str_value(a) =#
-#=     end =#
-#=     return s =#
-#= end =#
-#=  =#
-#= function CSTParser.str_value(x::CSTParser.ConditionalOpCall) =#
-#=     s = CSTParser.str_value(x.cond) =#
-#=     s *= CSTParser.str_value(x.op1) =#
-#=     s *= CSTParser.str_value(x.arg1) =#
-#=     s *= CSTParser.str_value(x.op2) =#
-#=     s *= CSTParser.str_value(x.arg2) =#
-#=     return s =#
-#= end =#
 
 function doc_pass(x, state)
     if x isa CSTParser.EXPR{CSTParser.MacroCall} && x.args[1] isa CSTParser.EXPR{CSTParser.GlobalRefDoc}
