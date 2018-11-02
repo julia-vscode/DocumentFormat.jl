@@ -28,6 +28,8 @@ function format(text; convert_iterator_ops=false)
     end
     state.offset = 0
     pass(x, state, doc_pass)
+    #= state.offset = 0 =#
+    #= pass(x, state, textwidth_pass) =#
     sort!(state.edits, lt = (a,b) -> first(a.loc) < first(b.loc), rev = true)
     #= @info state.edits =#
     for i = 1:length(state.edits)
@@ -74,6 +76,7 @@ end
 function apply(text, edit::Edit{Int})
     string(text[1:edit.loc], edit.text, text[nextind(text, edit.loc):end])
 end
+
 function apply(text, edit::Edit{UnitRange{Int}})
     string(text[1:prevind(text, first(edit.loc))], edit.text, text[nextind(text, last(edit.loc)):end])
 end
