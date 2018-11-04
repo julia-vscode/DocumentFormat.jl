@@ -53,9 +53,9 @@ end
 
 
 function ensure_single_space_after(x, state, offset)
-    if x.fullspan == last(x.span)
+    if x.fullspan == x.span
         if x isa CSTParser.OPERATOR
-            if length(x.span) > 1 && length(String(Expr(x))) == 1
+            if x.span > 1 && length(String(Expr(x))) == 1
                 push!(state.edits, Edit(offset + 1, " "))
             else
                 push!(state.edits, Edit(offset + x.fullspan, " "))
@@ -67,8 +67,8 @@ function ensure_single_space_after(x, state, offset)
 end
 
 function ensure_no_space_after(x, state, offset)
-    if x.fullspan != last(x.span)
-        push!(state.edits, Edit(offset .+(last(x.span)+1:x.fullspan), ""))
+    if x.fullspan != x.span
+        push!(state.edits, Edit(offset .+(x.span+1:x.fullspan), ""))
     end
 end
 

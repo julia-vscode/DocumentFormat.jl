@@ -94,7 +94,7 @@ function indent_pass(x, state)
                 if s == "" && i != length(doc_strs)
                     state.offset += 1
                 else
-                    a = CSTParser.LITERAL(length(s)+1, 1:length(s), s, Tokens.STRING)
+                    a = CSTParser.LITERAL(length(s)+1, length(s), s, Tokens.STRING)
                     check_indent(a, state)
                     indent_pass(a, state)
                 end
