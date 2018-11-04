@@ -104,7 +104,7 @@ function forloop_pass(x, state)
 end
 
 # TODO: move this to CSTParser?
-function CSTParser.str_value(x::CSTParser.PUNCTUATION)
+function str_value(x::CSTParser.PUNCTUATION)
     x.kind == Tokens.LPAREN && return "("
     x.kind == Tokens.LBRACE && return "{"
     x.kind == Tokens.LSQUARE && return "["
@@ -118,19 +118,20 @@ function CSTParser.str_value(x::CSTParser.PUNCTUATION)
     return ""
 end
 
-function CSTParser.str_value(x::CSTParser.EXPR)
+function str_value(x::CSTParser.EXPR)
     s = ""
     for a in x
-        s *= CSTParser.str_value(a)
+        s *= str_value(a)
     end
     return s
 end
 
-function CSTParser.str_value(x::CSTParser.UnarySyntaxOpCall)
-    s = CSTParser.str_value(x.arg1)
-    s *= CSTParser.str_value(x.arg2)
+function str_value(x::CSTParser.UnarySyntaxOpCall)
+    s = str_value(x.arg1)
+    s *= str_value(x.arg2)
     return s
 end
+str_value(x) = CSTParser.str_value(x)
 
 function doc_pass(x, state)
     if x isa CSTParser.EXPR{CSTParser.MacroCall} && x.args[1] isa CSTParser.EXPR{CSTParser.GlobalRefDoc}
@@ -144,7 +145,7 @@ function doc_pass(x, state)
         offset = state.offset + x.args[1].fullspan
         doc = x.args[2]
 
-        val = CSTParser.str_value(doc)
+        val = str_value(doc)
 
         s = strip(val, ['\n'])
         ds = string("\"\"\"\n", s, "\n", "\"\"\"\n")
