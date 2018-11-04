@@ -1,10 +1,49 @@
+function get_newline_ranges(text::String)
+    ranges = UnitRange{Int}[]
+    for t in CSTParser.Tokenize.tokenize(text)
+        #= @info offset, t =#
+        if t.kind == Tokens.WHITESPACE
+            offset = t.startbyte
+            for c in t.val
+                if c == '\n'
+                    s = length(ranges) > 0 ? last(ranges[end]) + 1 : 1
+                    push!(ranges, s:offset+1)
+
+                    # removes the newline at the end of every line
+                    #= s = length(ranges) > 0 ? last(ranges[end]) + 1 : 0 =#
+                    #= push!(ranges, s+1:offset) =#
+                end
+                offset += 1
+            end
+        elseif t.kind == Tokens.TRIPLE_STRING
+            offset = t.startbyte
+            nls = findall(x -> x == '\n', t.val)
+            for nl in nls
+                s = length(ranges) > 0 ? last(ranges[end]) + 1 : 1
+                push!(ranges, s:offset+nl)
+            end
+        end
+    end
+    ranges
+end
+
+function get_location(ranges::Vector{UnitRange{Int}}, idx::Int)
+    @assert idx >= first(ranges[1]) && idx <= last(ranges[end])
+    for (l, r) in enumerate(ranges)
+        if idx in r
+            return (l, idx - first(r) + 1)
+        end
+    end
+    error("this should never be thrown")
+end
+
 INDENT_WIDTH = 4
 NL = '\n'
 ws(n::Int) = repeat(' ', n)
 
 pretty(x) = pretty(x, 0)
 pretty(x::T, width) where {T<:Union{CSTParser.AbstractEXPR, Vector}} = mapreduce(y -> pretty(y, width), *, x; init="")
-pretty(x::T, width) where {T <: Union{CSTParser.IDENTIFIER,CSTParser.LITERAL}} = x.val
+pretty(x::T, width) where {T<:Union{CSTParser.IDENTIFIER,CSTParser.LITERAL}} = x.val
 pretty(x::CSTParser.OPERATOR, width) = string(CSTParser.Expr(x))
 pretty(x::CSTParser.EXPR{CSTParser.MacroName}, width) = string(CSTParser.Expr(x))
 #= pretty(x::CSTParser.KEYWORD, width) = x.kind |> string |> lowercase =#
@@ -32,6 +71,7 @@ function pretty(x::CSTParser.PUNCTUATION, width)
 end
 
 pretty(x::CSTParser.EXPR{CSTParser.Parameters}, width) = "; " * pretty(x.args, width)
+pretty(x::CSTParser.EXPR{CSTParser.Abstract}, width) = pretty(x.args[1:3], width) * ws(1) * pretty(x.args[4], width)
 
 pretty(x::CSTParser.LITERAL, width; in_doc=false) = x.kind == Tokens.STRING && !in_doc ? string("\"", x.val, "\"") : x.val
 function pretty(x::CSTParser.EXPR{CSTParser.StringH}, width; in_doc=false)
@@ -96,6 +136,7 @@ function pretty(x::CSTParser.EXPR{CSTParser.Mutable}, width)
     s * pretty(x.args[5], width)
 end
 
+
 function pretty(x::CSTParser.EXPR{CSTParser.Do}, width)
     s = pretty(x.args[1:3], width)
     if x.args[4] isa CSTParser.EXPR{CSTParser.Block}
@@ -136,6 +177,7 @@ function pretty(x::CSTParser.EXPR{T}, width) where T <: Union{CSTParser.Using,CS
             s *= pretty(a, width)
         end
     end
+	# TODO: check max width thingy
     s * NL
 end
 
