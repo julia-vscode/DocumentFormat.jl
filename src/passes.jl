@@ -109,6 +109,34 @@ function forloop_pass(x, state)
     end
 end
 
+function str_value(x::CSTParser.PUNCTUATION)
+    x.kind == Tokens.LPAREN && return "("
+    x.kind == Tokens.LBRACE && return "{"
+    x.kind == Tokens.LSQUARE && return "["
+    x.kind == Tokens.RPAREN && return ")"
+    x.kind == Tokens.RBRACE && return "}"
+    x.kind == Tokens.RSQUARE && return "]"
+    x.kind == Tokens.COMMA && return ","
+    x.kind == Tokens.SEMICOLON && return ";"
+    x.kind == Tokens.AT_SIGN && return "@"
+    x.kind == Tokens.DOT && return "."
+    return ""
+end
+
+function str_value(x::CSTParser.EXPR)
+    s = ""
+    for a in x
+        s *= str_value(a)
+    end
+    return s
+end
+
+function str_value(x::CSTParser.UnarySyntaxOpCall)
+    s = str_value(x.arg1)
+    s *= str_value(x.arg2)
+    return s
+end
+str_value(x) = CSTParser.str_value(x)
 
 function doc_pass(x, state)
     if x isa CSTParser.EXPR{CSTParser.MacroCall} && x.args[1] isa CSTParser.EXPR{CSTParser.GlobalRefDoc}
@@ -120,13 +148,20 @@ function doc_pass(x, state)
         #
         # If the doc is single quoted i.e. "doc", they will be replaced with triple quotes.
         offset = state.offset + x.args[1].fullspan
+        doc = x.args[2]
 
-        s = pretty(x; docstring_only=true)
+        val = str_value(doc)
 
-        # Remove previous docstring
-        push!(state.edits, Edit(offset+1:offset+x.args[2].fullspan, ""))
-        # Append newly formatted docstring
-        push!(state.edits, Edit(offset, s))
+        s = strip(val, ['\n'])
+        ds = string("\"\"\"\n", s, "\n", "\"\"\"\n")
+
+        # Check if docstring needs to be edited
+        if length(ds) != doc.fullspan || s != val
+            # Remove previous docstring
+            push!(state.edits, EditF(offset+1:offset+doc.fullspan, ""))
+            # Append newly formatted docstring
+            push!(state.edits, EditF(offset, ds))
+        end
     end
 end
 

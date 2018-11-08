@@ -2,18 +2,19 @@ module DocumentFormat
 using CSTParser
 import CSTParser.Tokenize.Tokens
 
-struct Edit{T}
+
+struct EditF{T}
     loc::T
     text::String
 end
 
-mutable struct State{T}
+mutable struct StateF{T}
     offset::Int
     edits::T
 end
 
-function format(text; convert_iterator_ops=false)
-    state = State(0, Edit[])
+function format0(text; convert_iterator_ops=false)
+    state = StateF(0, EditF[])
     x = CSTParser.parse(text, true)
     pass(x, state, operator_pass)
     state.offset = 0
@@ -28,8 +29,6 @@ function format(text; convert_iterator_ops=false)
     end
     state.offset = 0
     pass(x, state, doc_pass)
-    #= state.offset = 0 =#
-    #= pass(x, state, textwidth_pass) =#
     sort!(state.edits, lt = (a,b) -> first(a.loc) < first(b.loc), rev = true)
     #= @info state.edits =#
     for i = 1:length(state.edits)
@@ -57,27 +56,27 @@ function ensure_single_space_after(x, state, offset)
     if x.fullspan == last(x.span)
         if x isa CSTParser.OPERATOR
             if length(x.span) > 1 && length(String(Expr(x))) == 1
-                push!(state.edits, Edit(offset + 1, " "))
+                push!(state.edits, EditF(offset + 1, " "))
             else
-                push!(state.edits, Edit(offset + x.fullspan, " "))
+                push!(state.edits, EditF(offset + x.fullspan, " "))
             end
         else
-            push!(state.edits, Edit(offset + x.fullspan, " "))
+            push!(state.edits, EditF(offset + x.fullspan, " "))
         end
     end
 end
 
 function ensure_no_space_after(x, state, offset)
     if x.fullspan != last(x.span)
-        push!(state.edits, Edit(offset .+(last(x.span)+1:x.fullspan), ""))
+        push!(state.edits, EditF(offset .+(last(x.span)+1:x.fullspan), ""))
     end
 end
 
-function apply(text, edit::Edit{Int})
+function apply(text, edit::EditF{Int})
     string(text[1:edit.loc], edit.text, text[nextind(text, edit.loc):end])
 end
 
-function apply(text, edit::Edit{UnitRange{Int}})
+function apply(text, edit::EditF{UnitRange{Int}})
     string(text[1:prevind(text, first(edit.loc))], edit.text, text[nextind(text, last(edit.loc)):end])
 end
 

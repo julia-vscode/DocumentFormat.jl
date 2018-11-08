@@ -81,12 +81,10 @@ function indent_pass(x, state)
         end
     elseif x isa CSTParser.EXPR{CSTParser.MacroCall}
         if x.args[1] isa CSTParser.EXPR{CSTParser.GlobalRefDoc}
-            #= for a in x =#
-            #=     indent_pass(a, state) =#
-            #= end =#
             state.offset += x.args[1].fullspan
 
-            doc_strs = split(CSTParser.str_value(x.args[2]), "\n")
+            doc = x.args[2]
+            doc_strs = split(str_value(doc), "\n")
 
             state.offset += 4
             for (i, s) in enumerate(doc_strs)
@@ -96,7 +94,7 @@ function indent_pass(x, state)
                 if s == "" && i != length(doc_strs)
                     state.offset += 1
                 else
-                    a = CSTParser.LITERAL(length(s)+1, 1:length(s), s, Tokens.STRING)
+                    a = CSTParser.LITERAL(length(s)+1, length(s), s, Tokens.STRING)
                     check_indent(a, state)
                     indent_pass(a, state)
                 end
@@ -245,7 +243,7 @@ end
 function indents(text)
     x = CSTParser.parse(text, true)
     lines = get_lines(text)
-    state = indent_pass(x, State(0, IndentState(0, lines, [])))
+    state = indent_pass(x, StateF(0, IndentState(0, lines, [])))
 
     sort!(state.edits.edits, lt = (a,b) -> a[1] < b[1], rev = true)
     for (l, d) in state.edits.edits
