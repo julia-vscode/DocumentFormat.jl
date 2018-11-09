@@ -49,7 +49,7 @@ function indent_pass(x, state)
         state.edits.indent -= 1
         check_indent(x.args[3], state)
         state.offset += x.args[3].fullspan
-    elseif x isa CSTParser.EXPR{T} where T <: Union{CSTParser.FunctionDef,CSTParser.Macro,CSTParser.For,CSTParser.While,CSTParser.Let,CSTParser.Struct}
+    elseif x isa CSTParser.EXPR{T} where T <: Union{CSTParser.FunctionDef,CSTParser.Macro,CSTParser.For,CSTParser.While,CSTParser.Struct}
         state.offset += x.args[1].fullspan + x.args[2].fullspan
         if x.args[3] isa CSTParser.EXPR{CSTParser.Block}
             state.edits.indent += 1
@@ -64,33 +64,40 @@ function indent_pass(x, state)
             check_indent(x.args[3], state)
             state.offset += x.args[3].fullspan
         end
+    elseif x isa CSTParser.EXPR{CSTParser.Do}
+        state.offset += x.args[1].fullspan + x.args[2].fullspan + x.args[3].fullspan
+        if x.args[4] isa CSTParser.EXPR{CSTParser.Block}
+            state.edits.indent += 1
+            for a in x.args[4]
+                check_indent(a, state)
+                indent_pass(a, state)
+            end
+            state.edits.indent -= 1
+            check_indent(x.args[5], state)
+            state.offset += x.args[5].fullspan
+        else
+            check_indent(x.args[4], state)
+            state.offset += x.args[4].fullspan
+        end
     elseif x isa CSTParser.EXPR{CSTParser.MacroCall}
         if x.args[1] isa CSTParser.EXPR{CSTParser.GlobalRefDoc}
             state.offset += x.args[1].fullspan
 
-            # Doc alignment cases:
-            #
-            # 1. """doc"""
-            # 2. """
-            #    doc
-            #    """
-            # 3. """doc
-            #    """
-            # 4. """
-            #    doc"""
-            #
-
             doc = x.args[2]
-            doc_strs = split(doc.val, "\n")
+            doc_strs = split(str_value(doc), "\n")
 
-            # If true there is a newline after the initial triple quote
-            length(doc.val) + 8 == doc.fullspan ? (state.offset += 4) : (state.offset += 3)
-
-            for s in doc_strs
-                l = length(s)
-                a = CSTParser.LITERAL(l+1, 1:l, s, Tokens.STRING)
-                check_indent(a, state)
-                indent_pass(a, state)
+            state.offset += 4
+            for (i, s) in enumerate(doc_strs)
+                # Skip indenting lines of "".
+                # The final "" is associated with identing the
+                # trailing docstring triple quote
+                if s == "" && i != length(doc_strs)
+                    state.offset += 1
+                else
+                    a = CSTParser.LITERAL(length(s)+1, length(s), s, Tokens.STRING)
+                    check_indent(a, state)
+                    indent_pass(a, state)
+                end
             end
             state.offset += 3
 
@@ -175,6 +182,42 @@ function indent_pass(x, state)
                 end
 
             end
+        end
+
+    #= elseif x isa CSTParser.ConditionalOpCall =#
+    #=     @info "CONDITIONAL" =#
+    #=     state.offset += x.fullspan =#
+
+    # let args =
+    #   body
+    # end
+    #
+    # or
+    #
+    # args = let
+    #   body
+    # end
+    elseif x isa CSTParser.EXPR{CSTParser.Let}
+        if length(x.args) > 3
+            state.offset += x.args[1].fullspan + x.args[2].fullspan
+            state.edits.indent += 1
+            for a in x.args[3]
+                check_indent(a, state)
+                indent_pass(a, state)
+            end
+            state.edits.indent -= 1
+            check_indent(x.args[4], state)
+            state.offset += x.args[4].fullspan
+        else
+            state.offset += x.args[1].fullspan
+            state.edits.indent += 1
+            for a in x.args[2]
+                check_indent(a, state)
+                indent_pass(a, state)
+            end
+            state.edits.indent -= 1
+            check_indent(x.args[3], state)
+            state.offset += x.args[3].fullspan
         end
 
     elseif x isa CSTParser.LeafNode
