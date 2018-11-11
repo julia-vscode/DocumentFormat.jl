@@ -36,7 +36,7 @@ end
     @test format("a+ b*c") == "a + b * c"
     @test format("a+b *c") == "a + b * c"
     @test format("a+b* c") == "a + b * c"
-    @test format("a+b*c ") == "a + b * c "
+    @test format("a+b*c ") == "a + b * c"
     @test format("a:b") == "a:b"
     @test format("a : b") == "a:b"
     @test format("a: b") == "a:b"
@@ -46,7 +46,7 @@ end
     @test format("a: b:c") == "a:b:c"
     @test format("a:b :c") == "a:b:c"
     @test format("a:b: c") == "a:b:c"
-    @test format("a:b:c ") == "a:b:c "
+    @test format("a:b:c ") == "a:b:c"
     @test format("a::b:: c") == "a::b::c"
     @test format("a :: b::c") == "a::b::c"
 end
@@ -199,26 +199,26 @@ end
             arg
         end""") == str
 
-    str = """
-    for iter in I, iter2 in I2
-        arg
-    end"""
-    @test format("""
-    for iter=I, iter2 in I2
-        arg
-    end""", convert_iterator_ops=true) == str
-    @test format("""
-    for iter =I, iter2 in I2
-        arg
-    end""", convert_iterator_ops=true) == str
-    @test format("""
-    for iter =I, iter2 in I2
-        arg
-    end""", convert_iterator_ops=true) == str
-    @test format("""
-    for iter = I, iter2 = I2
-        arg
-    end""", convert_iterator_ops=true) == str
+    #= str = """ =#
+    #= for iter in I, iter2 in I2 =#
+    #=     arg =#
+    #= end""" =#
+    #= @test format(""" =#
+    #= for iter=I, iter2 in I2 =#
+    #=     arg =#
+    #= end""", convert_iterator_ops=true) == str =#
+    #= @test format(""" =#
+    #= for iter =I, iter2 in I2 =#
+    #=     arg =#
+    #= end""", convert_iterator_ops=true) == str =#
+    #= @test format(""" =#
+    #= for iter =I, iter2 in I2 =#
+    #=     arg =#
+    #= end""", convert_iterator_ops=true) == str =#
+    #= @test format(""" =#
+    #= for iter = I, iter2 = I2 =#
+    #=     arg =#
+    #= end""", convert_iterator_ops=true) == str =#
 end
 
 @testset "while" begin
@@ -457,14 +457,12 @@ end
     @test format("""
        begin
        \"""
-
            f
 
        docstring for f
        :(function \$(dict[:name]){\$(all_params...)}(\$(dict[:args]...);
                                             \$(dict[:kwargs]...))::\$rtype
        \$(dict[:body])
-
        \"""
        function f()
            100
