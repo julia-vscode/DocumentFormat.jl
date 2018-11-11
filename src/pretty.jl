@@ -1,3 +1,7 @@
+# TODO: strip extra newlines in merge_edits
+# TODO: further indent code
+# TODO: experiment with max_width
+
 struct Document
     text::AbstractString
     ranges::Vector{UnitRange{Int}}
@@ -283,10 +287,20 @@ function pretty(x::CSTParser.EXPR{CSTParser.MacroCall}, s::State)
 
         return merge_edits(e, pretty(x.args[3], s), s)
     end
-    # TODO: figure out MacroCall whitespace is off a little
+
     e = ""
     for (i, a) in enumerate(x)
-        if i == length(x) - 1 && a isa CSTParser.PUNCTUATION && x.args[i+1] isa CSTParser.PUNCTUATION
+        # Macro calls can be whitespace sensitive
+        if i == 1 || i == 2
+            o = s.offset
+            loc = cursor_loc(s)
+            ei = pretty(a, s)
+            if startswith(s.doc.text[o:o+loc[3]-loc[2]], ei.text * " ")
+                e = merge_edits(e, ei, s) * " "
+            else
+                e = merge_edits(e, ei, s)
+            end
+        elseif i == length(x) - 1 && a isa CSTParser.PUNCTUATION && x.args[i+1] isa CSTParser.PUNCTUATION
             e = merge_edits(e, pretty(a, s), s)
         elseif a isa CSTParser.PUNCTUATION && a.kind == Tokens.COMMA && i != length(x)
             e = merge_edits(e, pretty(a, s) * " ", s)
@@ -297,12 +311,11 @@ function pretty(x::CSTParser.EXPR{CSTParser.MacroCall}, s::State)
     e
 end
 
-
-function pretty(x::CSTParser.EXPR{CSTParser.Block}, s::State)
+function pretty(x::CSTParser.EXPR{CSTParser.Block}, s::State; ignore_single_line=false)
     #= @info "INDENT START", s.indent_width * s.indents =#
-    e = ""
-    sl = cursor_loc(s)[1] == cursor_loc(s, s.offset+x.fullspan-1)[1]
+    sl = !ignore_single_line ? cursor_loc(s)[1] == cursor_loc(s, s.offset+x.fullspan-1)[1] : false
     #= @info "SINGLE LINE BLOCK", x, length(x) =#
+    e = ""
     for (i, a) in enumerate(x)
         if i == length(x) - 1 && a isa CSTParser.PUNCTUATION && x.args[i+1] isa CSTParser.PUNCTUATION
             e = merge_edits(e, pretty(a, s), s)
@@ -332,8 +345,8 @@ function pretty(x::CSTParser.EXPR{CSTParser.FunctionDef}, s::State)
     e = pretty(x.args[1], s)
     e = merge_edits(e, " " * pretty(x.args[2], s), s)
     if length(x) > 3
-        sl = cursor_loc(s)[1] == cursor_loc(s, s.offset+x.args[3].fullspan+x.args[4].fullspan-1)[1]
-        (sl && x.args[3].fullspan != 0) && (e *= " ")
+        sl = cursor_loc(s)[1] == cursor_loc(s, s.offset+x.args[3].fullspan+x.args[4].span-1)[1]
+        sl && x.args[3].fullspan != 0 && (e *= " ")
         s.indents += 1
         e = merge_edits(e, pretty(x.args[3], s), s)
         s.indents -= 1
@@ -344,16 +357,29 @@ function pretty(x::CSTParser.EXPR{CSTParser.FunctionDef}, s::State)
     e
 end
 
-function pretty(x::CSTParser.EXPR{T}, s::State) where T <: Union{CSTParser.Macro,CSTParser.For,CSTParser.While,CSTParser.Struct}
+function pretty(x::CSTParser.EXPR{T}, s::State) where T <: Union{CSTParser.Macro,CSTParser.Struct}
     e = pretty(x.args[1], s)
     e = merge_edits(e, " " * pretty(x.args[2], s), s)
-    if length(x.args[3]) == 0
-        e *= " "
+    sl = cursor_loc(s)[1] == cursor_loc(s, s.offset+x.args[3].fullspan+x.args[4].span-1)[1]
+    sl && x.args[3].fullspan != 0 && (e *= " ")
+    s.indents += 1
+    e = merge_edits(e, pretty(x.args[3], s), s)
+    s.indents -= 1
+    merge_edits(e, pretty(x.args[4], s), s)
+end
+
+function pretty(x::CSTParser.EXPR{T}, s::State) where T <: Union{CSTParser.For,CSTParser.While}
+    e = pretty(x.args[1], s)
+    if x.args[2] isa CSTParser.EXPR{CSTParser.Block}
+        e = merge_edits(e, " " * pretty(x.args[2], s; ignore_single_line=true), s)
     else
-        s.indents += 1
-        e = merge_edits(e, pretty(x.args[3], s), s)
-        s.indents -= 1
+        e = merge_edits(e, " " * pretty(x.args[2], s), s)
     end
+    sl = cursor_loc(s)[1] == cursor_loc(s, s.offset+x.args[3].fullspan+x.args[4].span-1)[1]
+    sl && x.args[3].fullspan != 0 && (e *= " ")
+    s.indents += 1
+    e = merge_edits(e, pretty(x.args[3], s), s)
+    s.indents -= 1
     merge_edits(e, pretty(x.args[4], s), s)
 end
 
@@ -363,13 +389,11 @@ function pretty(x::CSTParser.EXPR{CSTParser.Mutable}, s::State)
     e = pretty(x.args[1], s)
     e = merge_edits(e, " " * pretty(x.args[2], s), s)
     e = merge_edits(e, " " * pretty(x.args[3], s), s)
-    if length(x.args[4]) == 0
-        e *= " "
-    else
-        s.indents += 1
-        e = merge_edits(e, pretty(x.args[4], s), s)
-        s.indents -= 1
-    end
+    sl = cursor_loc(s)[1] == cursor_loc(s, s.offset+x.args[4].fullspan+x.args[5].span-1)[1]
+    sl && x.args[4].fullspan != 0 && (e *= " ")
+    s.indents += 1
+    e = merge_edits(e, pretty(x.args[4], s), s)
+    s.indents -= 1
     merge_edits(e, pretty(x.args[5], s), s)
 end
 
@@ -411,12 +435,10 @@ function pretty(x::CSTParser.EXPR{CSTParser.Try}, s::State)
     e
 end
 
-#= function pretty(x::CSTParser.EXPR{CSTParser.ModuleH}, s::State) =#
-#=     #= e = pretty(x.args[1:2], s) =# =#
-#=     #= e = merge_edits(e, pretty(x.args[3], s), s) =# =#
-#=     #= merge_edits(e, pretty(x.args[4], s), s) =# =#
-#=     pretty(x.args, s) =#
-#= end =#
+function pretty(x::CSTParser.EXPR{CSTParser.ModuleH}, s::State)
+    e = pretty(x.args[1], s) * " "
+    merge_edits(e, pretty(x.args[2:end], s), s)
+end
 
 function pretty(x::CSTParser.EXPR{T}, s::State) where T <: Union{CSTParser.Using,CSTParser.Import,CSTParser.Export}
     e = pretty(x.args[1], s) * " "
@@ -439,12 +461,6 @@ function pretty(x::T, s::State) where T <: Union{CSTParser.BinaryOpCall,CSTParse
     else
         e = merge_edits(e, " " * pretty(x.op, s) * " ", s)
     end
-    # TODO: is checking if arg2 is a Block good enough?
-    #= if x.arg2 isa CSTParser.EXPR{CSTParser.Block} && (CSTParser.defines_function(x) || CSTParser.defines_anon_function(x)) =#
-    #=     e = merge_edits(e, pretty(x.arg2, s; single_line=true), s) =#
-    #= else =#
-    #=     e = merge_edits(e, pretty(x.arg2, s), s) =#
-    #= end =#
     merge_edits(e, pretty(x.arg2, s), s)
 end
 
@@ -467,6 +483,8 @@ function pretty(x::CSTParser.EXPR{CSTParser.Begin}, s::State)
     if length(x.args[2]) == 0
         e *= " "
     else
+        sl = cursor_loc(s)[1] == cursor_loc(s, s.offset+x.args[2].fullspan+x.args[3].span-1)[1]
+        sl && x.args[2].fullspan != 0 && (e *= " ")
         s.indents += 1
         e = merge_edits(e, pretty(x.args[2], s), s)
         s.indents -= 1
@@ -493,7 +511,11 @@ function pretty(x::CSTParser.EXPR{CSTParser.Let}, s::State)
     e = ""
     if length(x.args) > 3
         e *= pretty(x.args[1], s) * " "
-        e = merge_edits(e, pretty(x.args[2], s), s)
+        if x.args[2] isa CSTParser.EXPR{CSTParser.Block}
+            e = merge_edits(e, pretty(x.args[2], s; ignore_single_line=true), s)
+        else
+            e = merge_edits(e, pretty(x.args[2], s), s)
+        end
         if length(x.args[3]) == 0
             e *= " "
         else
@@ -558,8 +580,6 @@ function pretty(x::CSTParser.EXPR{T}, s::State) where T <: Union{CSTParser.Compa
     e
 end
 
-pretty(x::CSTParser.EXPR{CSTParser.Parameters}, s::State) = "; " * pretty(x.args, s)
-
 function pretty(x::CSTParser.EXPR{CSTParser.Return}, s::State)
     e = pretty(x.args[1], s)
     if x.args[2].fullspan != 0
@@ -568,16 +588,16 @@ function pretty(x::CSTParser.EXPR{CSTParser.Return}, s::State)
     e
 end
 
-function pretty(x::CSTParser.EXPR{CSTParser.Curly}, s::State)
-    e = ""
-    for a in x
-        e = merge_edits(e, pretty(a, s), s)
-    end
-    e
-end
+#= function pretty(x::CSTParser.EXPR{CSTParser.Curly}, s::State) =#
+#=     e = "" =#
+#=     for a in x =#
+#=         e = merge_edits(e, pretty(a, s), s) =#
+#=     end =#
+#=     e =#
+#= end =#
 
-function pretty(x::CSTParser.EXPR{T}, s::State) where T <: Union{CSTParser.TupleH,CSTParser.Call,CSTParser.Vect}
-    e = ""
+function pretty(x::CSTParser.EXPR{T}, s::State) where T <: Union{CSTParser.TupleH,CSTParser.Call,CSTParser.Vect,CSTParser.Parameters}
+    e = x isa CSTParser.EXPR{CSTParser.Parameters} ? "; " : ""
     for (i, a) in enumerate(x)
         if i == length(x) - 1 && a isa CSTParser.PUNCTUATION && x.args[i+1] isa CSTParser.PUNCTUATION
             e = merge_edits(e, pretty(a, s), s)
