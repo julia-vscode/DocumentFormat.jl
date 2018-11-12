@@ -1,5 +1,4 @@
 # TODO: strip extra newlines in merge_edits
-# TODO: further indent code
 # TODO: experiment with max_width
 
 struct Document
@@ -41,8 +40,6 @@ function newline_ranges(text::String)
                 s = length(ranges) > 0 ? last(ranges[end]) + 1 : 1
                 push!(ranges, s:offset+nl)
             end
-        #= elseif t.kind == Tokens.STRING && t.startpos[1] != t.endpos[1] =#
-        #=     @info length(ranges), t =#
         end
     end
     ranges
@@ -99,8 +96,10 @@ function merge_edits(a::Edit, b::Edit, s::State; remove_extra_newlines=false)
     end
 
 
+    #= v = s.doc.text[s.doc.ranges[a.endline]] =#
+    #= i = first(findfirst(x -> !isspace(x), v)) =#
+    #= w = repeat(" ", max(i, s.indents * s.indent_width)) =#
     w = repeat(" ", s.indents * s.indent_width)
-
 
     # Due to the way CSTParser parses if statements, by default the condition
     # after the elseif keyword will be on a newline. For this reason we
@@ -127,6 +126,7 @@ function merge_edits(a::Edit, b::Edit, s::State; remove_extra_newlines=false)
             text *= v[i:end] * w
         end
     end
+
     text *= b.text
 
     Edit(a.startline, b.endline, text)
@@ -455,9 +455,11 @@ end
 
 function pretty(x::T, s::State) where T <: Union{CSTParser.BinaryOpCall,CSTParser.BinarySyntaxOpCall}
     e = pretty(x.arg1, s)
-    #= (CSTParser.precedence(x.op) in (14)) && (@info x.op, x.op.kind) =#
+    #= @info x.op, x.op.kind, CSTParser.precedence(x.op) =#
     if CSTParser.precedence(x.op) in (8, 13, 14, 16) && x.op.kind != Tokens.ANON_FUNC
         e = merge_edits(e, pretty(x.op, s), s)
+    elseif x.op.kind == Tokens.EX_OR
+        e = merge_edits(e, " " * pretty(x.op, s), s)
     else
         e = merge_edits(e, " " * pretty(x.op, s) * " ", s)
     end
@@ -542,6 +544,8 @@ function pretty(x::CSTParser.EXPR{CSTParser.If}, s::State)
     e = pretty(x.args[1], s)
     if x.args[1] isa CSTParser.KEYWORD && x.args[1].kind == Tokens.IF
         e = merge_edits(e, " " * pretty(x.args[2], s), s)
+        sl = cursor_loc(s)[1] == cursor_loc(s, s.offset+x.args[3].fullspan-1)[1]
+        sl && x.args[3].fullspan != 0 && (e *= " ")
         s.indents += 1
         e = merge_edits(e, pretty(x.args[3], s), s)
         s.indents -= 1
@@ -587,14 +591,6 @@ function pretty(x::CSTParser.EXPR{CSTParser.Return}, s::State)
     end
     e
 end
-
-#= function pretty(x::CSTParser.EXPR{CSTParser.Curly}, s::State) =#
-#=     e = "" =#
-#=     for a in x =#
-#=         e = merge_edits(e, pretty(a, s), s) =#
-#=     end =#
-#=     e =#
-#= end =#
 
 function pretty(x::CSTParser.EXPR{T}, s::State) where T <: Union{CSTParser.TupleH,CSTParser.Call,CSTParser.Vect,CSTParser.Parameters}
     e = x isa CSTParser.EXPR{CSTParser.Parameters} ? "; " : ""
