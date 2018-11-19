@@ -457,17 +457,15 @@ end
     @test format("""
        begin
        \"""
-
            f
 
        docstring for f
        :(function \$(dict[:name]){\$(all_params...)}(\$(dict[:args]...);
                                             \$(dict[:kwargs]...))::\$rtype
        \$(dict[:body])
-
        \"""
        function f()
-           100
+       100
        end
        end""") == str
 end

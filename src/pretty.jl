@@ -1,24 +1,23 @@
-# TODO: strip extra newlines in merge_edits
-#
 # ###
 # ### Nesting
 # ###
 #
 # TODO:
 #
-# ChainOpCall [?]
-# Comparison [?]
+# ChainOpCall [maybe]
+# Comparison [maybe]
 # MacroCall
 #
 # DONE
 #
-# BinaryOpSyntaxCall/BinaryOpCall [x] (pending changes to nestable)
+# BinaryOpSyntaxCall/BinaryOpCall [x]
 # Conditional [x]
 # WhereOpCall [x]
 # Call [x]
 # Parameters [x]
 # TupleH [x]
 # Vect [x]
+# InvisBrackets [x]
 # Export [x]
 # Import [x]
 # Using [x]
@@ -77,6 +76,7 @@ end
 cursor_loc(s::State) = cursor_loc(s, s.offset)
 
 
+
 struct Edit
     startline::Int
     endline::Int
@@ -100,9 +100,6 @@ function merge_edits(a::Edit, b::Edit, s::State; join_lines=false, custom_indent
 
     if (a.startline == b.startline || a.endline == b.endline) && custom_indent == 0
         text = a.text
-        if b.text == "end"
-            @info "Edit A", a, "Edit B", b
-        end
         text *= b.text == "end" ? " " * b.text : b.text
         return Edit(a.startline, b.endline, text)
     end
@@ -114,7 +111,8 @@ function merge_edits(a::Edit, b::Edit, s::State; join_lines=false, custom_indent
     # handle merging elseif keyword expliticly.
     text = ""
     if a.text == ""
-    elseif a.text == "\n"
+        # Accounts for a comment on the first line of the file
+        text *= a.startline == 1 ? s.doc.text[s.doc.ranges[1]] : "\n"
         s.line_offset = length(w)
     elseif endswith(a.text, "elseif")
         text = a.text * " "
@@ -125,26 +123,37 @@ function merge_edits(a::Edit, b::Edit, s::State; join_lines=false, custom_indent
         text *= a.text
     end
 
+    # TODO: maybe try addgin comments prior to the initial
+    # text if the lines are being joined
+    #
     # comments shouldn't be in between joinable lines anyway
+    comment_text = ""
     if !join_lines
-        for l in a.endline+1:b.startline-1
+        comment_range = a.endline+1:b.startline-1
+        for (i, l) in enumerate(comment_range)
             v = s.doc.text[s.doc.ranges[l]]
-            if v == "\n"
-                text *= v * w
-                continue
+            #= @info l, v =#
+
+            # remove extra newlines
+            if i < length(comment_range) && v == "\n"
+                vn = s.doc.text[s.doc.ranges[l+1]]
+                v == vn && (continue)
             end
+
+            v == "\n" && (comment_text = rstrip(comment_text, ' ') * v * w; continue)
+
             i = first(findfirst(x -> !isspace(x), v))
             if v[i] == '#'
-                text *= v[i:end] * w
+                comment_text *= v[i:end] * w
             else
                 # This captures the possible additional indentation in a docstring
                 i = max(min(i, s.indents-1 * s.indent_width), 1)
-                text *= v[i:end] * w
+                comment_text *= v[i:end] * w
             end
         end
     end
 
-    text *= b.text
+    text *= comment_text * b.text
     Edit(a.startline, b.endline, text)
 end
 
@@ -157,6 +166,25 @@ Base.:*(a::Edit, b::AbstractString) = Edit(a.startline, a.endline, a.text * b)
 Base.:*(a::AbstractString, b::Edit) = Edit(b.startline, b.endline, a * b.text)
 merge_edits(a::Edit, b::AbstractString, s::State; kwargs...) = merge_edits(a, Edit(a.startline, a.endline, b), s; kwargs...)
 merge_edits(a::AbstractString, b::Edit, s::State; kwargs...) = merge_edits(Edit(b.startline, b.endline, a), b, s; kwargs...)
+
+# Determines whether the Edit `e` should be nested.
+function should_nest(e::Edit, line_offset::Int, custom_indent::Int, max_width::Int)
+    line_offset + length(e) > max_width && custom_indent + length(e) <= max_width
+end
+
+function nestable(x::T) where T <: Union{CSTParser.BinaryOpCall,CSTParser.BinarySyntaxOpCall}
+    x.op.kind == Tokens.EQ && CSTParser.defines_function(x) && (return true)
+    CSTParser.precedence(x.op) in (4, 5, 7, 9, 11) && (return true)
+    false
+    #= x.op.kind == Tokens.LAZY_OR && (return true) =#
+    #= x.op.kind == Tokens.LAZY_AND && (return true) =#
+    #= x.op.kind == Tokens.OR && (return true) =#
+    #= x.op.kind == Tokens.AND && (return true) =#
+    #= x.op.kind == Tokens.ANON_FUNC && (return false) =#
+    #= CSTParser.precedence(x.op) == 6 && (return false) =#
+    #= CSTParser.issyntaxcall(x.op) && (return false) =#
+    #= true =#
+end
 
 function pretty(x::T, s::State, custom_indent=0) where T <: Union{CSTParser.AbstractEXPR, Vector}
     s.line_offset = custom_indent == 0 ? s.line_offset : custom_indent
@@ -249,7 +277,8 @@ function pretty(x::CSTParser.LITERAL, s::State, custom_indent=0; surround_with_q
            x.val
     s.offset += x.fullspan
     s.line_offset += length(text)
-    Edit(loc[1], loc[1], text == "" ? "\n" : text)
+    #= Edit(loc[1], loc[1], text == "" ? "\n" : text) =#
+    Edit(loc[1], loc[1], text)
 end
 
 function pretty(x::CSTParser.EXPR{CSTParser.StringH}, s::State, custom_indent=0)
@@ -270,7 +299,7 @@ function pretty(x::CSTParser.EXPR{CSTParser.MacroCall}, s::State, custom_indent=
     if x.args[1] isa CSTParser.EXPR{CSTParser.GlobalRefDoc}
         pretty(x.args[1], s)
 
-        o = s.offset
+        offset = s.offset
         loc1 = cursor_loc(s)
         s.offset += x.args[2].fullspan
         loc2 = cursor_loc(s, s.offset-1)
@@ -279,33 +308,32 @@ function pretty(x::CSTParser.EXPR{CSTParser.MacroCall}, s::State, custom_indent=
 
         tq = "\"\"\""
         w = repeat(" ", s.indent_width * s.indents)
-        is_ts = startswith(s.doc.text[o:o+loc1[3]-loc1[2]], tq)
+        is_ts = startswith(s.doc.text[offset:offset+loc1[3]-loc1[2]], tq)
         quote_len = is_ts ? 3 : 1
         #= @info "STARTS WITH TRIPLE QUOTES", is_ts =#
 
         e = Edit(loc1[1], loc1[1], tq)
 
         if loc1[3] - loc1[2] > quote_len
-            sidx = is_ts ? o + 3 : o + 1
+            sidx = is_ts ? offset + 3 : offset + 1
             if loc1[1] == loc2[1]
-                eidx = is_ts ? o+loc1[3]-loc1[2]-4 : o+loc1[3]-loc1[2]-2
+                eidx = is_ts ? offset+loc1[3]-loc1[2]-4 : offset+loc1[3]-loc1[2]-2
                 v = s.doc.text[sidx:eidx]
                 #= @info "H1", v =#
             else
                 #= eidx = is_ts ? o+loc1[3]-loc1[2]-1 : o+loc1[3]-loc1[2]-1 =#
-                eidx = o+loc1[3]-loc1[2]-1
+                eidx = offset+loc1[3]-loc1[2]-1
                 v = s.doc.text[sidx:eidx]
                 #= @info "H2", v =#
             end
             e = merge_edits(e, Edit(loc1[1], loc1[1], "\n" * w * v), s)
         end
 
-        o = s.offset
-
+        offset = s.offset
         if loc1[1] == loc2[1]
             e = merge_edits(e, Edit(loc2[1]+1, loc2[1]+1, tq), s)
         elseif loc2[3] > quote_len + 1
-            v = strip(is_ts ? s.doc.text[o-loc2[2]:o-5] : s.doc.text[o-loc2[2]:o-3])
+            v = strip(is_ts ? s.doc.text[offset-loc2[2]:offset-5] : s.doc.text[offset-loc2[2]:offset-3])
             #= @info "H3", v =#
             if v  != ""
                 e = merge_edits(e, Edit(loc2[1], loc2[1], v * "\n" * w * tq), s)
@@ -325,9 +353,9 @@ function pretty(x::CSTParser.EXPR{CSTParser.MacroCall}, s::State, custom_indent=
         # Macro calls can be whitespace sensitive
         ei = pretty(a, s, custom_indent)
         if i == 1 || i == 2
-            o = s.offset
+            offset = s.offset
             loc = cursor_loc(s)
-            if startswith(s.doc.text[o:o+loc[3]-loc[2]], ei.text * " ")
+            if startswith(s.doc.text[offset:offset+loc[3]-loc[2]], ei.text * " ")
                 e = merge_edits(e, ei, s) * " "
                 s.line_offset += 1
             else
@@ -381,7 +409,10 @@ function pretty(x::CSTParser.EXPR{CSTParser.FunctionDef}, s::State, custom_inden
         s.indents -= 1
         e = merge_edits(e, pretty(x.args[4], s), s)
     else
-        e = merge_edits(e, pretty(x.args[3], s), s)
+        # function stub, i.e. "function foo end"
+        # this should be on one line
+        s.line_offset += 1
+        e = merge_edits(e, " " * pretty(x.args[3], s), s; join_lines=true)
     end
     e
 end
@@ -477,140 +508,15 @@ function pretty(x::CSTParser.EXPR{CSTParser.ModuleH}, s::State, custom_indent=0)
     merge_edits(e, pretty(x.args[3:4], s), s)
 end
 
-function pretty(x::CSTParser.WhereOpCall, s::State, custom_indent=0)
-    line_offset = s.line_offset
-    custom_indent += custom_indent == 0 ? line_offset : 0
-    line_width = custom_indent == 0 ? line_offset : custom_indent
-    #= @info "$(typeof(x)) line_width = $(line_width), custom_indent = $(custom_indent)" =#
-
-    e = pretty(x.arg1, s, custom_indent)
-    s.line_offset += 1
-    e = merge_edits(e, " " * pretty(x.op, s) * " ", s; join_lines=true)
-    s.line_offset += 1
-
-    last_line = findlast("\n" * repeat(" ",  custom_indent), e.text)
-    if last_line != nothing
-        custom_indent += length(e) - last(last_line)
-    end
-
-    merge_edits(e, pretty(x.args, s, custom_indent), s; join_lines=true)
-end
-
-
-function nestable(x::T) where T <: Union{CSTParser.BinaryOpCall,CSTParser.BinarySyntaxOpCall}
-    #= CSTParser.isunaryop(x) && (return false) =#
-    x.op.kind == Tokens.EQ && CSTParser.defines_function(x) && (return true)
-    x.op.kind == Tokens.LAZY_OR && (return true)
-    x.op.kind == Tokens.LAZY_AND && (return true)
-    x.op.kind == Tokens.OR && (return true)
-    x.op.kind == Tokens.AND && (return true)
-    x.op.kind == Tokens.ANON_FUNC && (return false)
-    CSTParser.issyntaxcall(x.op) && (return false)
-    true
-end
-
-#= UNNESTABLE_BINARY_OPS = (Tokens.ISSUBTYPE, Tokens.ISSUPERTYPE, Tokens.DECLARATION, Tokens.COLON, Toekns.DDOT) =#
-
-function pretty(x::T, s::State, custom_indent=0) where T <: Union{CSTParser.BinaryOpCall,CSTParser.BinarySyntaxOpCall}
-    custom_indent += custom_indent == 0 ? s.line_offset : 0
-
-    @info typeof(x), x.op.kind, CSTParser.precedence(x.op), custom_indent, s.line_offset
-
-    e = pretty(x.arg1, s, custom_indent)
-    if CSTParser.precedence(x.op) in (8, 13, 14, 16) && x.op.kind != Tokens.ANON_FUNC
-        e = merge_edits(e, pretty(x.op, s), s; join_lines=true)
-    elseif x.op.kind == Tokens.EX_OR
+function pretty(x::CSTParser.EXPR{CSTParser.Return}, s::State, custom_indent=0)
+    e = pretty(x.args[1], s)
+    if x.args[2].fullspan != 0
         s.line_offset += 1
-        e = merge_edits(e, " " * pretty(x.op, s), s, join_lines=true)
-    else
-        s.line_offset += 1
-        e = merge_edits(e, " " * pretty(x.op, s) * " ", s, join_lines=true)
-        s.line_offset += 1
-    end
-
-    if nestable(x)
-        line_width = custom_indent == 0 ? s.line_offset : custom_indent
-        @info "NESTING", x.op.kind, custom_indent, line_width
-        CSTParser.defines_function(x) && (custom_indent += s.indent_width)
-        e2 = pretty(x.arg2, s, custom_indent)
-        line_width += length(e) + length(e2)
-        if line_width > s.max_width
-            e = merge_edits(e, e2, s; custom_indent=custom_indent)
-        else
-            e = merge_edits(e, e2, s; join_lines=true)
-        end
-    else
-        last_line = findlast("\n" * repeat(" ",  custom_indent), e.text)
-        custom_indent += last_line != nothing ? length(e) - last(last_line) : length(e)
-        line_width = custom_indent == 0 ? s.line_offset : custom_indent
-        e2 = pretty(x.arg2, s, custom_indent)
-        line_width += length(e) + length(e2)
-        if line_width > s.max_width && nestable(x)
-            e = merge_edits(e, e2, s; custom_indent=custom_indent)
-        else
-            e = merge_edits(e, e2, s; join_lines=true)
-        end
+        custom_indent += custom_indent == 0 ? s.line_offset : 0
+        e = merge_edits(e, " " * pretty(x.args[2:end], s, custom_indent), s; join_lines=true)
     end
     e
 end
-
-# C ? E1 : E2
-#
-# if the above is > s.max_width
-# format to
-#
-# C ? E1 :
-# E2
-#
-# still doesn't fit?
-#
-# C ?
-# E1 :
-# E2
-#
-# C1 ? E1 : C2 ? E2 : C3 ? E3 : C4 ? E4 : E5
-#
-# [C1 ?, E1 :, C2 ? E2 : C3 ? E3 : C4 ? E4 : E5]
-# [C2 ?, E2 :, C3 ? E3 : C4 ? E4 : E5]
-# [C3 ?, E3 :, C4 ? E4 : E5]
-# [C4 ?, E4 :, E5]
-function pretty(x::CSTParser.ConditionalOpCall, s::State, custom_indent=0)
-    line_offset = s.line_offset
-    custom_indent += custom_indent == 0 ? line_offset : 0
-    line_width = custom_indent == 0 ? line_offset : custom_indent
-
-    #= @info "$(typeof(x)) line_width = $(line_width), custom_indent = $(custom_indent)" =#
-
-    edits = Edit[]
-    e = pretty(x.cond, s, custom_indent)
-    custom_indent == 0 && (custom_indent += length(e) - 1)
-    s.line_offset += 1
-    e = merge_edits(e, " " * pretty(x.op1, s) * " ", s; join_lines=true)
-    s.line_offset += 1
-    push!(edits, e)
-
-    e = pretty(x.arg1, s, custom_indent)
-    s.line_offset += 1
-    e = merge_edits(e, " " * pretty(x.op2, s) * " ", s; join_lines=true)
-    s.line_offset += 1
-    push!(edits, e)
-    push!(edits, pretty(x.arg2, s, custom_indent))
-
-
-    e = ""
-    for (i, ei) in enumerate(edits)
-        line_width += length(ei)
-        @info (i, custom_indent, line_width, ei)
-        if line_width > s.max_width
-            @info custom_indent
-            e = merge_edits(e, ei, s; custom_indent=custom_indent)
-        else
-            e = merge_edits(e, ei, s; join_lines=true)
-        end
-    end
-    e
-end
-
 
 function pretty(x::CSTParser.EXPR{CSTParser.Begin}, s::State, custom_indent=0)
     e = pretty(x.args[1], s)
@@ -706,6 +612,7 @@ function pretty(x::CSTParser.EXPR{CSTParser.If}, s::State, custom_indent=0)
     e
 end
 
+
 function pretty(x::CSTParser.EXPR{T}, s::State, custom_indent=0) where T <: Union{CSTParser.Comparison,CSTParser.ChainOpCall,CSTParser.Kw}
     e = ""
     for (i, a) in enumerate(x)
@@ -726,44 +633,116 @@ function pretty(x::CSTParser.EXPR{T}, s::State, custom_indent=0) where T <: Unio
     e
 end
 
-function pretty(x::CSTParser.EXPR{CSTParser.Return}, s::State, custom_indent=0)
-    e = pretty(x.args[1], s)
-    if x.args[2].fullspan != 0
+function pretty(x::T, s::State, custom_indent=0) where T <: Union{CSTParser.BinaryOpCall,CSTParser.BinarySyntaxOpCall}
+    custom_indent += custom_indent == 0 ? s.line_offset : 0
+
+    @info typeof(x), x.op.kind, CSTParser.precedence(x.op), custom_indent, s.line_offset
+
+    e = pretty(x.arg1, s, custom_indent)
+    if CSTParser.precedence(x.op) in (8, 13, 14, 16) && x.op.kind != Tokens.ANON_FUNC
+        e = merge_edits(e, pretty(x.op, s), s; join_lines=true)
+    elseif x.op.kind == Tokens.EX_OR
         s.line_offset += 1
-        custom_indent += custom_indent == 0 ? s.line_offset : 0
-        e = merge_edits(e, " " * pretty(x.args[2:end], s, custom_indent), s; join_lines=true)
+        e = merge_edits(e, " " * pretty(x.op, s), s, join_lines=true)
+    else
+        s.line_offset += 1
+        e = merge_edits(e, " " * pretty(x.op, s) * " ", s, join_lines=true)
+        s.line_offset += 1
+    end
+
+    if nestable(x)
+        line_offset = custom_indent == 0 ? s.line_offset : custom_indent
+        @info "NESTING", x.op.kind, custom_indent, line_offset
+        CSTParser.defines_function(x) && (custom_indent += s.indent_width)
+        e2 = pretty(x.arg2, s, custom_indent)
+        #= line_offset += length(e) + length(e2) =#
+        line_offset += length(e)
+        #= @info line_offset + length(e2), custom_indent(e) =#
+        if should_nest(e2, line_offset, custom_indent, s.max_width)
+            e = merge_edits(e, e2, s; custom_indent=custom_indent)
+        else
+            e = merge_edits(e, e2, s; join_lines=true)
+        end
+    else
+        last_line = findlast("\n" * repeat(" ",  custom_indent), e.text)
+        custom_indent += last_line != nothing ? length(e) - last(last_line) : length(e)
+        line_offset = custom_indent == 0 ? s.line_offset : custom_indent
+        e2 = pretty(x.arg2, s, custom_indent)
+        line_offset += length(e) + length(e2)
+        e = merge_edits(e, e2, s; join_lines=true)
+        #= if line_offset > s.max_width =#
+        #=     e = merge_edits(e, e2, s; custom_indent=custom_indent) =#
+        #= else =#
+        #=     e = merge_edits(e, e2, s; join_lines=true) =#
+        #= end =#
     end
     e
 end
 
-function pretty(x::CSTParser.EXPR{CSTParser.Parameters}, s::State, custom_indent=0)
-    line_offset = s.line_offset
-    custom_indent += custom_indent == 0 ? line_offset : 0
+function pretty(x::CSTParser.WhereOpCall, s::State, custom_indent=0)
+    custom_indent += custom_indent == 0 ? s.line_offset : 0
+    line_offset = custom_indent == 0 ? s.line_offset : custom_indent
+    @info "$(typeof(x)) line_offset = $(line_offset), custom_indent = $(custom_indent)"
+
+    e = pretty(x.arg1, s, custom_indent)
+    s.line_offset += 1
+    e = merge_edits(e, " " * pretty(x.op, s) * " ", s; join_lines=true)
+    s.line_offset += 1
+
+    last_line = findlast("\n" * repeat(" ",  custom_indent), e.text)
+    custom_indent += last_line != nothing ? length(e) - last(last_line) : length(e)
+
+    merge_edits(e, pretty(x.args, s, custom_indent), s; join_lines=true)
+end
+
+# C ? E1 : E2
+#
+# if the above is > s.max_width
+# format to
+#
+# C ? E1 :
+# E2
+#
+# still doesn't fit?
+#
+# C ?
+# E1 :
+# E2
+#
+# C1 ? E1 : C2 ? E2 : C3 ? E3 : C4 ? E4 : E5
+#
+# [C1 ?, E1 :, C2 ? E2 : C3 ? E3 : C4 ? E4 : E5]
+# [C2 ?, E2 :, C3 ? E3 : C4 ? E4 : E5]
+# [C3 ?, E3 :, C4 ? E4 : E5]
+# [C4 ?, E4 :, E5]
+function pretty(x::CSTParser.ConditionalOpCall, s::State, custom_indent=0)
+    custom_indent += custom_indent == 0 ? s.line_offset : 0
+    line_offset = custom_indent == 0 ? s.line_offset : custom_indent
+
+    #= @info "$(typeof(x)) line_offset = $(line_offset), custom_indent = $(custom_indent)" =#
 
     edits = Edit[]
-    e = ""
-    for (i, a) in enumerate(x)
-        if CSTParser.is_comma(a)
-            e = merge_edits(e, pretty(a, s, custom_indent) * " ", s; join_lines=true)
-            push!(edits, e)
-            e = ""
-        else
-            e = merge_edits(e,  pretty(a, s, custom_indent), s; join_lines=true)
-        end
-    end
+    e = pretty(x.cond, s, custom_indent)
+    custom_indent == 0 && (custom_indent += length(e) - 1)
+    s.line_offset += 1
+    e = merge_edits(e, " " * pretty(x.op1, s) * " ", s; join_lines=true)
+    s.line_offset += 1
     push!(edits, e)
 
-    line_width = custom_indent == 0 ? line_offset : custom_indent
-    # add 2 for "; "
-    line_width += sum(length.(edits)) + 2
+    e = pretty(x.arg1, s, custom_indent)
+    s.line_offset += 1
+    e = merge_edits(e, " " * pretty(x.op2, s) * " ", s; join_lines=true)
+    s.line_offset += 1
+    push!(edits, e)
+    push!(edits, pretty(x.arg2, s, custom_indent))
 
-    #= @info "CUSTOM OFFSET", custom_indent =#
-    #= @info "LINE WIDTH", line_width =#
-    #= @info edits =#
 
-    e = line_width > s.max_width ? ";" : "; "
+    e = ""
     for (i, ei) in enumerate(edits)
-        if line_width > s.max_width
+        @info (i, custom_indent, line_offset, ei)
+        line_offset += length(ei)
+        if line_offset > s.max_width
+        #= if should_nest(ei, line_offset, custom_indent, s.max_width) =#
             e = merge_edits(e, ei, s; custom_indent=custom_indent)
         else
             e = merge_edits(e, ei, s; join_lines=true)
@@ -771,6 +750,8 @@ function pretty(x::CSTParser.EXPR{CSTParser.Parameters}, s::State, custom_indent
     end
     e
 end
+
+
 
 function pretty(x::CSTParser.EXPR{T}, s::State, custom_indent=0) where T <: Union{CSTParser.Curly,CSTParser.Call}
     line_offset = s.line_offset
@@ -787,43 +768,78 @@ function pretty(x::CSTParser.EXPR{T}, s::State, custom_indent=0) where T <: Unio
     end
     custom_indent += 1
 
-    #= custom_indent += custom_indent == 0 ? line_offset + length(edits[1]) : length(edits[1]) =#
     sep = x isa CSTParser.EXPR{CSTParser.Call} ? " " : ""
-
 
     edits = Edit[merge_edits(e, pretty(x.args[2], s), s; join_lines=true)]
     e = ""
     for (i, a) in enumerate(x.args[3:end])
-        if CSTParser.is_comma(a)
-            # remove trailing comma
-            #= i == length(x) - 3 && continue =#
+        #= if CSTParser.is_comma(a) =#
+        if CSTParser.is_comma(a) && i + 2 < length(x) && !(x.args[i+3] isa CSTParser.PUNCTUATION)
             e = merge_edits(e, pretty(a, s, custom_indent) * sep, s; join_lines=true)
             s.line_offset += length(sep)
             push!(edits, e)
             e = ""
+        elseif a isa CSTParser.EXPR{CSTParser.Parameters}
+            push!(edits, e)
+            e = ""
+            e = merge_edits(e, pretty(a, s, custom_indent), s; join_lines=true)
         else
             e = merge_edits(e, pretty(a, s, custom_indent), s; join_lines=true)
         end
     end
     push!(edits, e)
 
-    line_width = custom_indent == 0 ? line_offset : custom_indent
-    line_width += sum(length.(edits[2:end]))
+    @info edits[1]
+    line_offset = custom_indent == 0 ? line_offset : custom_indent
 
-    @info line_width
-
-    e = ""
-    for (i, ei) in enumerate(edits)
-        #= @info i, line_width, length(ei), ei.text =#
-        if line_width > s.max_width && i > 2
-            @info "HERE", i, ei, custom_indent
+    e = edits[1]
+    for (i, ei) in enumerate(edits[2:end])
+        @info i, line_offset + length(ei), custom_indent + length(ei), ei.text
+        if should_nest(ei, line_offset, custom_indent, s.max_width) && i > 1
             e = merge_edits(e, ei, s; custom_indent=custom_indent)
+            line_offset = custom_indent
         else
             e = merge_edits(e, ei, s; join_lines=true)
         end
+        line_offset += length(ei)
     end
-
     #= @info "EXITING $typeof(x) line_offset = $(line_offset), custom_indent = $(custom_indent)", edits[1].text =#
+    e
+end
+
+function pretty(x::CSTParser.EXPR{CSTParser.Parameters}, s::State, custom_indent=0)
+    line_offset = s.line_offset
+    custom_indent += custom_indent == 0 ? line_offset : 0
+    @info typeof(x), custom_indent, line_offset
+
+    l, _, _, = cursor_loc(s)
+    edits = Edit[Edit(l, l, ";")]
+    e = ""
+    for (i, a) in enumerate(x)
+        if CSTParser.is_comma(a)
+            e = merge_edits(e, pretty(a, s, custom_indent) * " ", s; join_lines=true)
+            push!(edits, e)
+            e = ""
+        else
+            e = merge_edits(e,  pretty(a, s, custom_indent), s; join_lines=true)
+        end
+    end
+    push!(edits, e)
+
+    line_offset = custom_indent == 0 ? line_offset : custom_indent
+
+    e = ""
+    for (i, ei) in enumerate(edits)
+        @info i, line_offset + length(ei), custom_indent + length(ei), ei.text
+        if should_nest(ei, line_offset, custom_indent, s.max_width)
+            e = merge_edits(e, ei, s; custom_indent=custom_indent)
+            line_offset = custom_indent
+        else
+            e = merge_edits(e, ei, s; join_lines=true)
+            i == 1 && (e *= " "; line_offset += 1)
+        end
+        line_offset += length(ei)
+    end
     e
 end
 
@@ -853,7 +869,8 @@ function pretty(x::CSTParser.EXPR{T}, s::State, custom_indent=0) where T <: Unio
     e = ""
     for (i, ei) in enumerate(edits)
         #= @info line_offset, length(ei), ei.text =#
-        if line_offset + length(ei) > s.max_width && i > 1
+        #= if line_offset + length(ei) > s.max_width && i > 1 =#
+        if should_nest(ei, line_offset, custom_indent, s.max_width) && i > 1
             e = merge_edits(e, ei, s; custom_indent=custom_indent)
             line_offset = custom_indent
         else
@@ -864,7 +881,6 @@ function pretty(x::CSTParser.EXPR{T}, s::State, custom_indent=0) where T <: Unio
     e
 end
 
-# TODO: handle .
 function pretty(x::CSTParser.EXPR{T}, s::State, custom_indent=0) where T <: Union{CSTParser.Export,CSTParser.Import,CSTParser.Using}
     line_offset = s.line_offset
     custom_indent += custom_indent == 0 ? line_offset : 0
@@ -885,9 +901,10 @@ function pretty(x::CSTParser.EXPR{T}, s::State, custom_indent=0) where T <: Unio
 
     e = ""
     for (i, ei) in enumerate(edits)
-        line_offset += length(ei)
+        #= line_offset += length(ei) =#
         @info line_offset, length(ei), ei.text
-        if line_offset > s.max_width && i > 2
+        #= if line_offset > s.max_width && i > 2 =#
+        if should_nest(ei, line_offset, custom_indent, s.max_width) && i > 1 && i > 2
             e = merge_edits(e, ei, s; custom_indent=custom_indent)
             line_offset = custom_indent
         else
@@ -896,19 +913,4 @@ function pretty(x::CSTParser.EXPR{T}, s::State, custom_indent=0) where T <: Unio
         line_offset += length(ei)
     end
     e
-end
-
-function format(text::AbstractString; indent_width=4, max_width=90)
-    d = Document(text, newline_ranges(text))
-    s = State(indent_width, max_width, 0, 1, 0, d)
-    x = CSTParser.parse(text, true)
-    e = pretty(x, s)::Edit
-    @info e.startline, e.endline
-    if e.startline != 1
-        e = merge_edits(Edit(1, 1, d.text[d.ranges[1]]), e, s)
-    end
-    if e.endline != length(d.ranges)
-        e = merge_edits(e, Edit(length(d.ranges), length(d.ranges), d.text[d.ranges[end]]), s)
-    end
-    e.text
 end

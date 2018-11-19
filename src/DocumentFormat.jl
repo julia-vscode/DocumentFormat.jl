@@ -84,4 +84,23 @@ include("pretty.jl")
 include("passes.jl")
 include("indents.jl")
 
+function format(text::AbstractString; indent_width=4, max_width=100)
+    d = Document(text, newline_ranges(text))
+    s = State(indent_width, max_width, 0, 1, 0, d)
+    x = CSTParser.parse(text, true)
+    e = pretty(x, s)::Edit
+    @info e.startline, e.endline
+    # NOTE: I'm not sure if this is needed anymore.
+    # Previously the offset would start at the first
+    # line of code but now it seems to start at the
+    # very start of the file.
+    if e.startline != 1
+        e = merge_edits(Edit(1, 1, d.text[d.ranges[1]]), e, s)
+    end
+    if e.endline != length(d.ranges)
+        e = merge_edits(e, Edit(length(d.ranges), length(d.ranges), d.text[d.ranges[end]]), s)
+    end
+    e.text
+end
+
 end
