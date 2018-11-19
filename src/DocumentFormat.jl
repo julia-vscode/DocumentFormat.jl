@@ -85,11 +85,11 @@ include("passes.jl")
 include("indents.jl")
 
 function format(text::AbstractString; indent_width=4, max_width=100)
+    #= text[end] != "\n" && (text *= "\n") =#
     d = Document(text, newline_ranges(text))
     s = State(indent_width, max_width, 0, 1, 0, d)
     x = CSTParser.parse(text, true)
     e = pretty(x, s)::Edit
-    @info e.startline, e.endline
     # NOTE: I'm not sure if this is needed anymore.
     # Previously the offset would start at the first
     # line of code but now it seems to start at the
