@@ -51,8 +51,6 @@ function newline_ranges(text::String)
                 offset += 1
             end
         elseif t.kind == Tokens.ENDMARKER && length(ranges) == 0
-            #= s = length(ranges) > 0 ? last(ranges[end]) + 1 : 1 =#
-            #= @info t, s:t.startbyte =#
             push!(ranges, 1:t.startbyte)
         elseif (t.kind == Tokens.TRIPLE_STRING || t.kind == Tokens.STRING) && t.startpos[1] != t.endpos[1]
             offset = t.startbyte
@@ -165,8 +163,8 @@ merge_edits(a::AbstractString, b::Edit, s::State; kwargs...) = merge_edits(Edit(
 
 # Determines whether the Edit `e` should be nested.
 function should_nest(e::Edit, line_offset::Int, custom_indent::Int, max_width::Int)
-    #= line_offset + length(e) > max_width && custom_indent + length(e) <= max_width =#
-    line_offset + length(e) > max_width
+    line_offset + length(e) > max_width && custom_indent + length(e) <= max_width
+    #= line_offset + length(e) > max_width =#
 end
 
 function nestable(x::T) where T <: Union{CSTParser.BinaryOpCall,CSTParser.BinarySyntaxOpCall}
@@ -642,7 +640,7 @@ function pretty(x::T, s::State, custom_indent=0) where T <: Union{CSTParser.Bina
     if nestable(x)
         line_offset = custom_indent == 0 ? s.line_offset : custom_indent
         e2 = pretty(x.arg2, s, custom_indent)
-        #= line_offset += length(e) =#
+        line_offset += length(e)
         @info line_offset, line_offset + length(e2), e2.text
         #= @info e2.text =#
         if should_nest(e2, line_offset, custom_indent, s.max_width)
@@ -655,9 +653,7 @@ function pretty(x::T, s::State, custom_indent=0) where T <: Union{CSTParser.Bina
     else
         last_line = findlast("\n" * repeat(" ",  custom_indent), e.text)
         custom_indent += last_line != nothing ? length(e) - last(last_line) : length(e)
-        line_offset = custom_indent == 0 ? s.line_offset : custom_indent
         e2 = pretty(x.arg2, s, custom_indent)
-        line_offset += length(e) + length(e2)
         e = merge_edits(e, e2, s; join_lines=true)
     end
     e
