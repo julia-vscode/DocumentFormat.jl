@@ -613,6 +613,12 @@ end
              end"""
     @test format("if cond1 e1;e2 elseif cond2 e3; e4 end") == str
 
+    str = """\"""
+             doc for Foo
+             \"""
+             Foo"""
+    @test format("\"\"\"doc for Foo\"\"\"\nFoo") == str
+
 
 end
 
