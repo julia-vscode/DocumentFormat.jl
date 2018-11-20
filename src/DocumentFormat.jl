@@ -96,6 +96,7 @@ function format(text::AbstractString; indent_width=4, max_width=100)
     # very start of the file.
     if e.startline != 1
         e = merge_edits(Edit(1, 1, d.text[d.ranges[1]]), e, s)
+        @info e
     end
     if e.endline != length(d.ranges)
         e = merge_edits(e, Edit(length(d.ranges), length(d.ranges), d.text[d.ranges[end]]), s)

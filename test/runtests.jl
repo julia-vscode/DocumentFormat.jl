@@ -409,12 +409,14 @@ end
     function f()
         20
     end""") == str
+
     @test format("""
     \"""
     doc\"""
     function f()
         20
     end""") == str
+
     @test format("""
     \"""doc\"""
     function f()
@@ -427,19 +429,30 @@ end
     function f()
         20
     end""") == str
+
     @test format("""
     "
     doc"
     function f()
         20
     end""") == str
+
     @test format("""
     "doc"
     function f()
         20
     end""") == str
 
+    # test aligning to function identation
+    #
+    @test format("""
+        "doc"
+    function f()
+        20
+    end""") == str
+
     # tests indentation and correctly formatting a docstring with escapes
+    #
     str = """
        begin
            \"""
@@ -468,6 +481,142 @@ end
        100
        end
        end""") == str
+end
+
+# ok
+@testset "reformat" begin
+
+    str = """function foo end"""
+    @test format("""
+        function  foo
+        end""") == str
+
+    str = """function foo
+                 10
+                 20
+             end"""
+    @test format("""function foo 10;  20 end""") == str
+
+    str = """abstract type AbstractFoo end"""
+    @test format("""abstract
+            type
+                 AbstractFoo
+            end""") == str
+
+    str = """for cond
+                 1
+                 2
+                 3
+             end"""
+    @test format("""for cond 1; 2; 3 end""") == str
+
+    str = """while cond
+                 1
+                 2
+                 3
+             end"""
+    @test format("""while cond 1; 2; 3 end""") == str
+
+    str = """try
+                 a
+             catch e
+                 b
+             end"""
+    @test format("""try a catch e b end""") == str
+
+    str = """try
+                 a1
+                 a2
+             catch e
+                 b1
+                 b2
+             finally
+                 c1
+                 c2
+             end"""
+    @test format("""try a1;a2 catch e b1;b2 finally c1;c2 end""") == str
+
+    str = """map(a) do b, c
+                 e
+             end"""
+    @test format("""map(a) do b,c
+                 e end""") == str
+
+    str = """let a = b, c = d
+                 e1
+                 e2
+                 e3
+             end"""
+    @test format("""let a=b,c=d e1; e2; e3 end""") == str
+
+    str = """let a, b
+                 e
+             end"""
+    @test format("""let a,b
+                 e end""") == str
+
+    str = """module A
+             end"""
+    @test format("""module A  end""") == str
+
+    str = """return a, b, c"""
+    @test format("""return a,b,
+                 c""") == str
+
+    str = """begin
+                 a
+                 b
+                 c
+             end"""
+    @test format("""begin a; b; c end""") == str
+
+    str = """quote
+                 a
+                 b
+                 c
+             end"""
+    @test format("""quote a; b; c end""") == str
+
+    str = """if cond1
+                 e1
+                 e2
+             end"""
+    @test format("if cond1 e1;e2 end") == str
+
+    str = """if cond1
+                 e1
+                 e2
+             else
+                 e3
+                 e4
+             end"""
+    @test format("if cond1 e1;e2 else e3;e4 end") == str
+
+    str = """if cond1
+                 e1
+                 e2
+             elseif cond2
+                 e3
+                 e4
+             else
+                 e5
+                 e6
+             end"""
+    @test format("if cond1 e1; e2 elseif cond2 e3; e4 else e5;e6 end") == str
+
+    str = """if cond1
+                 e1
+                 e2
+             elseif cond2
+                 e3
+                 e4
+             end"""
+    @test format("if cond1 e1;e2 elseif cond2 e3; e4 end") == str
+
+
+end
+
+@testset "width aware" begin
 end
 
 end
