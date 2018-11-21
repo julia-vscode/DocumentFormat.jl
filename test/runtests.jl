@@ -483,6 +483,31 @@ end
        end""") == str
 end
 
+@testset "comments" begin
+    str = """
+    module Foo
+    # comment 1
+    begin
+        # comment 2
+        begin
+            # comment 3
+            a = 10
+        end
+    end
+    end"""
+    @test format("""
+    module Foo
+    # comment 1
+    begin
+    # comment 2
+    begin
+    # comment 3
+    a = 10
+    end
+    end
+    end""") == str
+end
+
 # ok
 @testset "reformat" begin
 
@@ -622,6 +647,22 @@ end
     #= str = """function f() where {A} =#
     #=          end""" =#
     #= @test format("function f() where A end") == str =#
+
+    str = """
+          # comment 0
+
+          a = 1
+
+          # comment 1
+
+          b = 2
+
+          c = 3
+
+          # comment 2
+
+          """
+    @test format("# comment 0\n\n\n\n\na=1\n\n# comment 1\n\n\n\n\nb = 2\n\n\nc=3\n\n# comment 2\n\n") == str
 
 end
 

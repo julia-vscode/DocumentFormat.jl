@@ -98,14 +98,16 @@ const Indent = Union{Nothing,Int}
 # b
 #
 function merge_edits(a::Edit, b::Edit, s::State; join_lines=false, indent::Indent=nothing)
+    @info a, b
+
     if (a.startline == b.startline || a.endline == b.endline) && indent == nothing
-        #= @info a, b =#
         return Edit(a.startline, b.endline, a.text * b.text)
     elseif a.text == ""
         return b
-    elseif b.text == ""
+    elseif b.text == "" && b.startline != length(s.doc.ranges)
         return a
     end
+
 
     # default to current indentation state
     w = repeat(" ", indent == nothing ? s.indents * s.indent_width : indent)
@@ -137,6 +139,8 @@ function merge_edits(a::Edit, b::Edit, s::State; join_lines=false, indent::Inden
         comment_range = a.endline+1:b.startline-1
         for (i, l) in enumerate(comment_range)
             v = s.doc.text[s.doc.ranges[l]]
+
+            @info l, v
 
             # remove extra newlines
             if i < length(comment_range) && v == "\n"

@@ -12,8 +12,11 @@ function format(text::AbstractString; indent_width=4, max_width=100)
     if e.startline != 1
         e = merge_edits(Edit(1, 1, d.text[d.ranges[1]]), e, s)
     end
+    @info e
+    @info length(d.ranges)
+    @info text
     if e.endline != length(d.ranges)
-        e = merge_edits(e, Edit(length(d.ranges), length(d.ranges), d.text[d.ranges[end]]), s)
+        e = merge_edits(e, Edit(length(d.ranges), length(d.ranges), text[d.ranges[end]]), s)
     end
     e.text
 end
