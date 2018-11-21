@@ -619,9 +619,9 @@ end
              Foo"""
     @test format("\"\"\"doc for Foo\"\"\"\nFoo") == str
 
-    str = """function f() where {A}
-             end"""
-    @test format("function f() where A end") == str
+    #= str = """function f() where {A} =#
+    #=          end""" =#
+    #= @test format("function f() where A end") == str =#
 
 end
 
