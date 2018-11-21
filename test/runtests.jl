@@ -619,10 +619,98 @@ end
              Foo"""
     @test format("\"\"\"doc for Foo\"\"\"\nFoo") == str
 
+    str = """function f() where {A}
+             end"""
+    @test format("function f() where A end") == str
 
 end
 
+# where A
+# where {A,B}
+# where T <: {A,B}
+# where T <: F{A,B}
+# where F{A,B}
+# nested where clauses
 @testset "width aware" begin
+    str = """
+    function f(arg1::A,
+               key1 = val1;
+               key2 = val2) where {A,
+                                   F{B,
+                                     C}}
+        10
+        20
+    end"""
+    @test format("function f(arg1::A,key1=val1;key2=val2) where {A,F{B,C}} 10; 20 end"; max_width=1) == str
+
+    # (|, ||, &&, &) are foldable
+    str = """
+    a |
+    b |
+    c |
+    d"""
+    @test format("a | b | c | d"; max_width=1) == str
+
+    str = """
+    f(a,
+      @g(b, c),
+      d)"""
+    @test format("f(a, @g(b, c), d)"; max_width=9) == str
+
+    str = """
+    a, b,
+    c, d"""
+    @test format("a, b, c, d"; max_width=6) == str
+
+    str = """
+    (a, b,
+     c, d)"""
+    @test format("(a, b, c, d)"; max_width=7) == str
+
+    str = """
+    [a,
+     b,
+     c,
+     d]"""
+    @test format("[a, b, c, d]"; max_width=1) == str
+
+    str = """
+    cond ?
+    e1 :
+    e2"""
+    @test format("cond ? e1 : e2"; max_width=1) == str
+
+    str = """
+    cond ? e1 :
+    e2"""
+    @test format("cond ? e1 : e2"; max_width=12) == str
+
+    str = """
+    cond1 ? e1 :
+    cond2 ? e2 :
+    cond3 ? e3 :
+    e4"""
+    @test format("cond1 ? e1 : cond2 ? e2 : cond3 ? e3 : e4"; max_width=13) == str
+
+    str = """
+    export a,
+           b"""
+    @test format("export a,b"; max_width=1) == str
+
+    str = """
+    using a,
+          b"""
+    @test format("using a,b"; max_width=1) == str
+
+    str = """
+    using M: a,
+             b"""
+    @test format("using M:a,b"; max_width=1) == str
+
+    str = """
+    import M1.M2.M3: a,
+                     b"""
+    @test format("import M1.M2.M3:a,b"; max_width=1) == str
 end
 
 end
