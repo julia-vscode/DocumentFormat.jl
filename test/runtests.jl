@@ -711,6 +711,30 @@ end
     import M1.M2.M3: a,
                      b"""
     @test format("import M1.M2.M3:a,b"; max_width=1) == str
+
+    str = """
+    foo() =
+        (one, x -> (true, false))"""
+    @test format("foo() = (one, x -> (true, false))"; max_width=30) == str
+
+    str = """
+    foo() =
+        (one,
+         x -> (true, false))"""
+    @test format("foo() = (one, x -> (true, false))"; max_width=24) == str
+
+    str = """
+    foo() =
+        (one,
+         x -> (true, false))"""
+    @test format("foo() = (one, x -> (true, false))"; max_width=24) == str
+
+    str = """
+    foo() =
+        (one,
+         x -> (true,
+               false))"""
+  @test format("foo() = (one, x -> (true, false))"; max_width=20) == str
 end
 
 end
