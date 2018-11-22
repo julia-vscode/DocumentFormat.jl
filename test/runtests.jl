@@ -664,14 +664,32 @@ end
           """
     @test format("# comment 0\n\n\n\n\na=1\n\n# comment 1\n\n\n\n\nb = 2\n\n\nc=3\n\n# comment 2\n\n") == str
 
+    str = """
+    [a b c]"""
+    @test format("[a   b         c   ]") == str
+
+    str = """
+    [a; b; c]"""
+    @test format("[a;   b;         c;   ]") == str
+
+    str = """
+    T[a b c]"""
+    @test format("T[a   b         c   ]") == str
+
+    str = """
+    T[a; b; c]"""
+    @test format("T[a;   b;         c;   ]") == str
+
+    str = """
+    T[a; b; c; e d f]"""
+    @test format("T[a;   b;         c;   e  d    f   ]") == str
+
+    str = """
+    T[e for e in x]"""
+    @test format("T[e  for e in x  ]") == str
+
 end
 
-# where A
-# where {A,B}
-# where T <: {A,B}
-# where T <: F{A,B}
-# where F{A,B}
-# nested where clauses
 @testset "width aware" begin
     str = """
     function f(arg1::A,

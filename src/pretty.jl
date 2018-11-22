@@ -204,7 +204,7 @@ function pretty(x::T, s::State, indent::Indent=nothing) where T <: Union{CSTPars
     for a in x
         ei = pretty(a, s)
         (ei.text == "") && (continue)
-        e = merge_edits(e, ei, s)
+        e = merge_edits(e, ei, s; join_lines=true)
     end
     e
 end
@@ -212,7 +212,6 @@ end
 function pretty(x::CSTParser.EXPR{CSTParser.FileH}, s::State, indent::Indent=nothing)
     e = ""
     for a in x
-        #= (ei.text == "") && (continue) =#
         e = merge_edits(e, pretty(a, s), s)
         s.line_offset = s.indents * s.indent_width
     end
@@ -1015,3 +1014,97 @@ function pretty(x::CSTParser.EXPR{T}, s::State, indent::Indent=nothing) where T 
     end
     e
 end
+
+
+###
+### Comprehensions
+###
+
+function pretty(x::CSTParser.EXPR{CSTParser.Vcat}, s::State, indent::Indent=nothing)
+    #= indent = indent == nothing ? s.line_offset : indent + 1 =#
+    e = ""
+    for (i, a) in enumerate(x)
+        if i > 1 && i < length(x) - 1
+            e = merge_edits(e, pretty(a, s) * "; ", s; join_lines=true)
+            s.line_offset += 2
+        else
+            e = merge_edits(e, pretty(a, s), s; join_lines=true)
+        end
+    end
+    e
+end
+
+
+function pretty(x::CSTParser.EXPR{CSTParser.TypedVcat}, s::State, indent::Indent=nothing)
+    #= indent = indent == nothing ? s.line_offset : indent + 1 =#
+    e = ""
+    for (i, a) in enumerate(x)
+        if i > 2 && i < length(x) - 1
+            e = merge_edits(e, pretty(a, s) * "; ", s; join_lines=true)
+            s.line_offset += 2
+        else
+            e = merge_edits(e, pretty(a, s), s; join_lines=true)
+        end
+    end
+    e
+end
+
+function pretty(x::CSTParser.EXPR{CSTParser.Hcat}, s::State, indent::Indent=nothing)
+    #= indent = indent == nothing ? s.line_offset : indent + 1 =#
+    e = ""
+    for (i, a) in enumerate(x)
+        if i > 1 && i < length(x) - 1
+            e = merge_edits(e, pretty(a, s) * " ", s; join_lines=true)
+            s.line_offset += 1
+        else
+            e = merge_edits(e, pretty(a, s), s; join_lines=true)
+        end
+    end
+    e
+end
+
+function pretty(x::CSTParser.EXPR{CSTParser.TypedHcat}, s::State, indent::Indent=nothing)
+    #= indent = indent == nothing ? s.line_offset : indent + 1 =#
+    e = ""
+    for (i, a) in enumerate(x)
+        if i > 2 && i < length(x) - 1
+            e = merge_edits(e, pretty(a, s) * " ", s; join_lines=true)
+            s.line_offset += 1
+        else
+            e = merge_edits(e, pretty(a, s), s; join_lines=true)
+        end
+    end
+    e
+end
+
+function pretty(x::CSTParser.EXPR{CSTParser.Row}, s::State, indent::Indent=nothing)
+    #= indent = indent == nothing ? s.line_offset : indent + 1 =#
+    e = ""
+    for (i, a) in enumerate(x)
+        if i < length(x)
+            e = merge_edits(e, pretty(a, s) * " ", s; join_lines=true)
+            s.line_offset += 1
+        else
+            e = merge_edits(e, pretty(a, s), s; join_lines=true)
+        end
+    end
+    e
+end
+
+# Expr KEYWORD Expr
+function pretty(x::CSTParser.EXPR{T}, s::State, indent::Indent=nothing) where T <: Union{CSTParser.Generator,CSTParser.Filter}
+    #= indent = indent == nothing ? s.line_offset : indent + 1 =#
+    e = ""
+    for (i, a) in enumerate(x)
+        if a isa CSTParser.KEYWORD
+            s.line_offset += 1
+            e = merge_edits(e, " " * pretty(a, s), s; join_lines=true)
+        else
+            e = merge_edits(e, pretty(a, s), s; join_lines=true)
+        end
+    end
+    e
+end
+
+# last_line = findlast("\n" * repeat(" ",  indent), e.text)
+# indent += last_line != nothing ? length(e) - last(last_line) : length(e)
