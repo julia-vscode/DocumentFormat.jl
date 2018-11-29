@@ -314,7 +314,7 @@ function pretty(x::CSTParser.EXPR{CSTParser.StringH}, s::State, indent::Indent=n
             e = merge_edits(e, pretty(a, s, indent), s)
         end
     end
-    Edit(e.startline, e.endline, "\"" * escape_string(e.text, "\$") * "\"")
+    Edit(e.startline, e.endline, "\"" * e.text * "\"")
 end
 
 function pretty(x::CSTParser.EXPR{CSTParser.MacroCall}, s::State, indent::Indent=nothing)
