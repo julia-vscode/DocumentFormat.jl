@@ -43,9 +43,10 @@ function tuple_pass(x, state)
         offset = state.offset
         n = length(x)
         for (i, a) in enumerate(x)
-            if a isa CSTParser.PUNCTUATION && a.kind == Tokens.COMMA && i !=n && !(x.args[i+1] isa CSTParser.PUNCTUATION)
+            i == n && continue
+            if a isa CSTParser.PUNCTUATION && a.kind == Tokens.COMMA && !(x.args[i+1] isa CSTParser.PUNCTUATION)
                 ensure_single_space_after(a, state, offset)
-            elseif i != n
+            elseif !(x.args[i + 1] isa CSTParser.EXPR{CSTParser.Parameters})
                 ensure_no_space_after(a, state, offset)
             end
             offset += a.fullspan
