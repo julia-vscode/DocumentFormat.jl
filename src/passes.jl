@@ -143,7 +143,8 @@ function doc_pass(x, state)
 
         val = str_value(doc)
 
-        s = escape_string(strip(val, ['\n']), "\$")
+        # s = escape_string(strip(val, ['\n']), "\$")
+        s = strip(val, ['\n'])
         ds = string("\"\"\"\n", s, "\n", "\"\"\"\n")
 
         # Check if docstring needs to be edited
