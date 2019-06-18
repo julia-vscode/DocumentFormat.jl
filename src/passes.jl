@@ -130,6 +130,7 @@ end
 
 
 function doc_pass(x, state)
+    return
     if x.typ === CSTParser.MacroCall && x.args[1].typ === CSTParser.GlobalRefDoc
         # Align global docstring to:
         #
