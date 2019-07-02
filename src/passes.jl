@@ -11,7 +11,8 @@ function operator_pass(x, state)
         ensure_single_space_after(x.args[2], state, state.offset + x.args[1].fullspan)
         n = length(x.args)
         offset = state.offset + x.args[1].fullspan + x.args[2].fullspan
-        for (i, a) in enumerate(x.args)
+        for i = 3:n
+            a = x.args[i]
             if i != n
                 ensure_no_space_after(a, state, offset)
             end
