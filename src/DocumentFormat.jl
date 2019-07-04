@@ -19,6 +19,7 @@ mutable struct State{T}
 end
 
 function format(text; convert_iterator_ops = false)
+    original_ast = CSTParser.remlineinfo!(Meta.parse(string("begin\n",text, "\nend")))
     state = State(0, Edit[], FormatOptions())
     x = CSTParser.parse(text, true)
     pass(x, state, operator_pass)
@@ -40,8 +41,9 @@ function format(text; convert_iterator_ops = false)
         text = apply(text, state.edits[i])
     end
     text = indents(text, state.opts)
+    new_ast = CSTParser.remlineinfo!(Meta.parse(string("begin\n",text, "\nend")))
+    original_ast != new_ast && error("Mismatch between AST of original and formatted text")
     return text
-
 end
 
 function pass(x, state, f = (x, state)->nothing)
