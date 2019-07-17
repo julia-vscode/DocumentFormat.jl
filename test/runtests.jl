@@ -8,9 +8,9 @@ end
 @testset "tuples" begin
     @test format("a,b") == "a, b"
     @test format("a ,b") == "a, b"
-    @test format("a ,b,") == "a, b,"
-    @test format("a ,b ,") == "a, b,"
-    @test format("a , b ,") == "a, b,"
+    @test format("a ,b") == "a, b"
+    @test format("a ,b") == "a, b"
+    @test format("a , b") == "a, b"
     @test format("(a,b)") == "(a, b)"
     @test format("(a ,b)") == "(a, b)"
     @test format("( a, b)") == "(a, b)"
@@ -18,14 +18,14 @@ end
     @test format("(a, b ,)") == "(a, b,)"
     @test format("π,汉") == "π, 汉"
     @test format("π ,汉") == "π, 汉"
-    @test format("π ,汉,") == "π, 汉,"
-    @test format("π ,汉 ,") == "π, 汉,"
-    @test format("π , 汉 ,") == "π, 汉,"
+    @test format("π ,汉") == "π, 汉"
+    @test format("π ,汉") == "π, 汉"
+    @test format("π , 汉") == "π, 汉"
     @test format("(π,汉)") == "(π, 汉)"
     @test format("(π ,汉)") == "(π, 汉)"
     @test format("( π, 汉)") == "(π, 汉)"
     @test format("(π, 汉 )") == "(π, 汉)"
-    @test format("(π, 汉 ,)") == "(π, 汉,)"
+    @test format("(π, 汉 )") == "(π, 汉)"
 end
 @testset "curly" begin
     @test format("X{a,b}") == "X{a,b}"
@@ -81,6 +81,7 @@ end
     @test format("π:σ:汉 ") == "π:σ:汉 "
     @test format("π::σ:: 汉") == "π::σ::汉"
     @test format("π :: σ::汉") == "π::σ::汉"
+    @test format("-π/ 2") == "-π / 2"
 end
 
 @testset "op chain" begin

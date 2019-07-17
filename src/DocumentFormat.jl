@@ -58,39 +58,10 @@ function pass(x, state, f = (x, state)->nothing)
     state
 end
 
-function get_last_char_index(s)
-    len = lastindex(s)
-    pos = len > 5 ? len - 5 : 1
-    try
-        while true
-            try; s[pos]; catch StringIndexError; pos += 1; continue; end
-            break
-        end
-    catch BoundsError
-        error("A UTF-8 char longer than 5 bytes was encountered, which is not supported currently.")
-    end
-    while true
-        if (nextpos = nextind(s, pos)) > len ; break; end
-        pos = nextpos
-    end
-    pos
-end
-
-
 function ensure_single_space_after(x, state, offset)
     if x.fullspan == x.span
-        if x.typ === CSTParser.OPERATOR
-            if x.span > 1 && length(String(Expr(x))) == 1
-                push!(state.edits, Edit(offset + 1, " "))
-            else
-                push!(state.edits, Edit(offset + x.fullspan, " "))
-            end
-        elseif x.val isa String
-            last_char_index = get_last_char_index(x.val)
-            push!(state.edits, Edit(offset + last_char_index, " "))
-        else
-            push!(state.edits, Edit(offset + x.fullspan, " "))
-        end
+        push!(state.edits, Edit(offset + x.fullspan, " "))
+        
     end
 end
 
@@ -101,10 +72,12 @@ function ensure_no_space_after(x, state, offset)
 end
 
 function apply(text, edit::Edit{Int})
-    string(text[1:edit.loc], edit.text, text[nextind(text, edit.loc):end])
+    v = Vector{UInt8}(deepcopy(text))
+    String(vcat(v[1:edit.loc], Vector{UInt8}(edit.text), v[edit.loc + 1:end]))
 end
 function apply(text, edit::Edit{UnitRange{Int}})
-    string(text[1:prevind(text, first(edit.loc))], edit.text, text[nextind(text, last(edit.loc)):end])
+    v = Vector{UInt8}(deepcopy(text))
+    String(vcat(v[1:first(edit.loc)-1], Vector{UInt8}(edit.text), v[last(edit.loc) + 1: end]))
 end
 include("passes.jl")
 include("indents.jl")
