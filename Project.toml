@@ -7,8 +7,8 @@ CSTParser = "00ebfdb7-1f24-5e51-bd34-a7502290713f"
 Tokenize = "0796e94c-ce3b-5d07-9a54-7f471281c624"
 
 [compat]
-CSTParser = "0.6"
-Tokenize = "0.5.4"
+CSTParser = "0.6.1"
+Tokenize = "0.5.5"
 julia = "1"
 
 [extras]
