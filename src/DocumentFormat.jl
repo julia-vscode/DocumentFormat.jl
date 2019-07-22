@@ -1,11 +1,14 @@
 module DocumentFormat
 using CSTParser
+using CSTParser.Tokenize
 import CSTParser.Tokenize.Tokens
 
 mutable struct FormatOptions
     indent::Int
+    convert_iter_ops::Bool
+    format_comments::Bool
 end
-FormatOptions() = FormatOptions(4)
+FormatOptions() = FormatOptions(4, false, true)
 
 struct Edit{T}
     loc::T
@@ -18,9 +21,9 @@ mutable struct State{T}
     opts::FormatOptions
 end
 
-function format(text; convert_iterator_ops = false)
+function format(text; formatopts::FormatOptions = FormatOptions())
     original_ast = CSTParser.remlineinfo!(Meta.parse(string("begin\n",text, "\nend")))
-    state = State(0, Edit[], FormatOptions())
+    state = State(0, Edit[], formatopts)
     x = CSTParser.parse(text, true)
     pass(x, state, operator_pass)
     state.offset = 0
@@ -29,9 +32,12 @@ function format(text; convert_iterator_ops = false)
     pass(x, state, curly_pass)
     state.offset = 0
     pass(x, state, call_pass)
-    if convert_iterator_ops
+    if formatopts.convert_iter_ops
         state.offset = 0
         pass(x, state, forloop_pass)
+    end
+    if formatopts.format_comments
+        comments_pass(text, state)
     end
     state.offset = 0
     pass(x, state, doc_pass)

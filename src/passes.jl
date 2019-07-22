@@ -158,3 +158,33 @@ function doc_pass(x, state)
         end
     end
 end
+
+function comments_pass(text, state)
+    ts = tokenize(text)
+    while !Tokenize.Lexers.eof(ts)
+        t = Tokenize.Lexers.next_token(ts)
+        if Tokens.kind(t) == Tokens.COMMENT
+            val = Vector{UInt8}(t.val)
+            if length(val) > 1 && val[2] == 0x3d # multiline
+                if !(val[3] in (0x20, 0x09)) # ensure single space at start
+                    push!(state.edits, Edit(t.startbyte + 2, " "))
+                end
+                if length(val) > 5 # ensure single space at 
+                    for i = length(val)-2:-1:3
+                        if val[i] in (0x20, 0x09, 0x0a, 0x0d)
+                            continue
+                        else
+                            push!(state.edits, Edit(t.startbyte .+ (i+1:length(val)-2), " "))
+                            break
+                        end
+                    end
+                end
+
+            elseif length(val) > 1
+                if !(val[2] in (0x20, 0x09)) # ensure single space at start
+                    push!(state.edits, Edit(t.startbyte + 1, " "))
+                end
+            end
+        end
+    end
+end
