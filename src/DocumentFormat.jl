@@ -5,10 +5,16 @@ import CSTParser.Tokenize.Tokens
 
 mutable struct FormatOptions
     indent::Int
-    convert_iter_ops::Bool
-    format_comments::Bool
+    indents::Bool
+    ops::Bool
+    tuples::Bool
+    curly::Bool
+    calls::Bool
+    iterOps::Bool
+    comments::Bool
+    docs::Bool
 end
-FormatOptions() = FormatOptions(4, false, true)
+FormatOptions() = FormatOptions(4, true, true, true, true, true, true, true, true)
 
 struct Edit{T}
     loc::T
@@ -21,32 +27,44 @@ mutable struct State{T}
     opts::FormatOptions
 end
 
-function format(text; formatopts::FormatOptions = FormatOptions())
+function format(text, formatopts::FormatOptions = FormatOptions())
     original_ast = CSTParser.remlineinfo!(Meta.parse(string("begin\n",text, "\nend")))
     state = State(0, Edit[], formatopts)
     x = CSTParser.parse(text, true)
-    pass(x, state, operator_pass)
-    state.offset = 0
-    pass(x, state, tuple_pass)
-    state.offset = 0
-    pass(x, state, curly_pass)
-    state.offset = 0
-    pass(x, state, call_pass)
-    if formatopts.convert_iter_ops
+    if formatopts.ops
+        pass(x, state, operator_pass)
+    end
+    if formatopts.tuples
+        state.offset = 0
+        pass(x, state, tuple_pass)
+    end
+    if formatopts.curly
+        state.offset = 0
+        pass(x, state, curly_pass)
+    end
+    if formatopts.calls
+        state.offset = 0
+        pass(x, state, call_pass)
+    end
+    if formatopts.iterOps
         state.offset = 0
         pass(x, state, forloop_pass)
     end
-    if formatopts.format_comments
+    if formatopts.comments
         comments_pass(text, state)
     end
-    state.offset = 0
-    pass(x, state, doc_pass)
+    if formatopts.docs
+        state.offset = 0
+        pass(x, state, doc_pass)
+    end
     sort!(state.edits, lt = (a, b)->first(a.loc) < first(b.loc), rev = true)
 
     for i = 1:length(state.edits)
         text = apply(text, state.edits[i])
     end
-    text = indents(text, state.opts)
+    if formatopts.indents
+        text = indents(text, state.opts)
+    end
     new_ast = CSTParser.remlineinfo!(Meta.parse(string("begin\n",text, "\nend")))
     original_ast != new_ast && error("Mismatch between AST of original and formatted text")
     return text

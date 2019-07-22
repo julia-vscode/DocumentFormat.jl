@@ -242,19 +242,19 @@ end
     @test format("""
     for iter=I, iter2 in I2
         arg
-    end""", convert_iterator_ops=true) == str
+    end""") == str
     @test format("""
     for iter =I, iter2 in I2
         arg
-    end""", convert_iterator_ops=true) == str
+    end""") == str
     @test format("""
     for iter =I, iter2 in I2
         arg
-    end""", convert_iterator_ops=true) == str
+    end""") == str
     @test format("""
     for iter = I, iter2 = I2
         arg
-    end""", convert_iterator_ops=true) == str
+    end""") == str
 end
 
 @testset "while" begin
