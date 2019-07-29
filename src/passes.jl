@@ -169,12 +169,12 @@ function comments_pass(text, state)
                 if !(val[3] in (0x20, 0x09)) # ensure single space at start
                     push!(state.edits, Edit(t.startbyte + 2, " "))
                 end
-                if length(val) > 5 # ensure single space at 
-                    for i = length(val)-2:-1:3
+                if length(val) > 5 # ensure single space at
+                    for i = length(val) - 2:-1:3
                         if val[i] in (0x20, 0x09, 0x0a, 0x0d)
                             continue
                         else
-                            push!(state.edits, Edit(t.startbyte .+ (i+1:length(val)-2), " "))
+                            push!(state.edits, Edit(t.startbyte .+ (i + 1:length(val) - 2), " "))
                             break
                         end
                     end
@@ -197,17 +197,16 @@ function lineends_pass(text, state)
     while !eof(io)
         c = read(io, Char)
         if c === '\n' && !eof(io)
-            Base.peek(io) == 0x0d && read(io, Char) # crlf 
+            Base.peek(io) == 0x0d && read(io, Char) # crlf
             i1 = i2 = position(io)
             pc = Base.peek(io)
             while !eof(io) && pc in (0x20, 0x09)
-                pc = read(io, UInt8)
                 i2 = position(io)
+                pc = read(io, UInt8)
             end
-            if i1!=i2
-                push!(state.edits, Edit((n-i2):(n-i1), ""))
+            if i1 != i2
+                push!(state.edits, Edit((n - i2) + 1:(n - i1), ""))
             end
         end
     end
-    
 end

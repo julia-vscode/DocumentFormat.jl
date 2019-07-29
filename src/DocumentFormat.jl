@@ -29,7 +29,7 @@ mutable struct State{T}
 end
 
 function format(text, formatopts::FormatOptions = FormatOptions())
-    original_ast = CSTParser.remlineinfo!(Meta.parse(string("begin\n",text, "\nend")))
+    original_ast = CSTParser.remlineinfo!(Meta.parse(string("begin\n", text, "\nend")))
     state = State(0, Edit[], formatopts)
     x = CSTParser.parse(text, true)
     if formatopts.ops
@@ -69,7 +69,7 @@ function format(text, formatopts::FormatOptions = FormatOptions())
     if formatopts.indents
         text = indents(text, state.opts)
     end
-    new_ast = CSTParser.remlineinfo!(Meta.parse(string("begin\n",text, "\nend")))
+    new_ast = CSTParser.remlineinfo!(Meta.parse(string("begin\n", text, "\nend")))
     original_ast != new_ast && error("Mismatch between AST of original and formatted text")
     return text
 end
@@ -89,7 +89,7 @@ end
 function ensure_single_space_after(x, state, offset)
     if x.fullspan == x.span
         push!(state.edits, Edit(offset + x.fullspan, " "))
-        
+
     end
 end
 
@@ -105,7 +105,7 @@ function apply(text, edit::Edit{Int})
 end
 function apply(text, edit::Edit{UnitRange{Int}})
     v = Vector{UInt8}(deepcopy(text))
-    String(vcat(v[1:first(edit.loc)-1], Vector{UInt8}(edit.text), v[last(edit.loc) + 1: end]))
+    String(vcat(v[1:first(edit.loc) - 1], Vector{UInt8}(edit.text), v[last(edit.loc) + 1:end]))
 end
 include("passes.jl")
 include("indents.jl")
