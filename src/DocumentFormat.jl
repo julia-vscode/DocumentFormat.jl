@@ -13,8 +13,9 @@ mutable struct FormatOptions
     iterOps::Bool
     comments::Bool
     docs::Bool
+    lineends::Bool
 end
-FormatOptions() = FormatOptions(4, true, true, true, true, true, true, true, true)
+FormatOptions() = FormatOptions(4, true, true, true, true, true, true, true, true, true)
 
 struct Edit{T}
     loc::T
@@ -56,6 +57,9 @@ function format(text, formatopts::FormatOptions = FormatOptions())
     if formatopts.docs
         state.offset = 0
         pass(x, state, doc_pass)
+    end
+    if formatopts.lineends
+        lineends_pass(text, state)
     end
     sort!(state.edits, lt = (a, b)->first(a.loc) < first(b.loc), rev = true)
 

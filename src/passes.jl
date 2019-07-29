@@ -188,3 +188,26 @@ function comments_pass(text, state)
         end
     end
 end
+
+
+
+function lineends_pass(text, state)
+    n = sizeof(text)
+    io = IOBuffer(reverse(text))
+    while !eof(io)
+        c = read(io, Char)
+        if c === '\n' && !eof(io)
+            Base.peek(io) == 0x0d && read(io, Char) # crlf 
+            i1 = i2 = position(io)
+            pc = Base.peek(io)
+            while !eof(io) && pc in (0x20, 0x09)
+                pc = read(io, UInt8)
+                i2 = position(io)
+            end
+            if i1!=i2
+                push!(state.edits, Edit((n-i2):(n-i1), ""))
+            end
+        end
+    end
+    
+end
