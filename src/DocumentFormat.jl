@@ -95,6 +95,38 @@ function format(path::AbstractPath, formatopts::FormatOptions = FormatOptions())
     return nothing
 end
 
+function isformatted(text::AbstractString, formatopts::FormatOptions = FormatOptions())
+    original_text = text
+    new_text = format(text, formatopts)
+
+    return original_text==new_text
+end
+
+function isformatted(path::AbstractPath, formatopts::FormatOptions = FormatOptions())
+    if isfile(path)
+        extension(path) != "jl" && error("Only .jl files can be formatted.")
+
+        content = read(path, String)
+        formatted_content = format(content, formatopts)
+        
+        return content == formatted_content
+    elseif exists(path)        
+        for p in walkpath(path)
+            if extension(p) == "jl"
+                if !isformatted(p, formatopts)
+                    return false
+                end
+            end
+        end
+
+        return true
+    else
+        error("Invalid path.")
+    end
+
+    return nothing
+end
+
 function pass(x, state, f = (x, state)->nothing)
     f(x, state)
     if x.args isa Vector
