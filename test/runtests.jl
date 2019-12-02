@@ -1,4 +1,5 @@
-using DocumentFormat: format
+using DocumentFormat: format, isformatted
+using FilePathsBase
 using Test
 
 @testset "All" begin
@@ -507,5 +508,34 @@ end"""
 #        end
 #        end""") == str
 # end
+
+    @testset "Public API" begin
+
+        original = """
+   function  bar(x   ,  y   =  3)
+       end
+"""
+
+        original_should = """
+function  bar(x,  y   =  3)
+end
+"""
+
+        @test format(original) == original_should
+        @test isformatted(original) == false
+        @test isformatted(original_should) == true
+
+        mktempdir() do temp_dir
+            temp_dir = Path(temp_dir)
+            write(join(temp_dir, "original.jl"), original)
+
+            @test isformatted(join(temp_dir, "original.jl")) == false
+            @test isformatted(temp_dir) == false
+
+            format(temp_dir)
+            @test isformatted(temp_dir) == true
+        end
+
+    end
 
 end

@@ -2,6 +2,7 @@ module DocumentFormat
 using CSTParser
 using CSTParser.Tokenize
 import CSTParser.Tokenize.Tokens
+using FilePathsBase
 
 mutable struct FormatOptions
     indent::Int
@@ -28,7 +29,7 @@ mutable struct State{T}
     opts::FormatOptions
 end
 
-function format(text, formatopts::FormatOptions = FormatOptions())
+function format(text::AbstractString, formatopts::FormatOptions = FormatOptions())
     original_ast = CSTParser.remlineinfo!(Meta.parse(string("begin\n", text, "\nend")))
     state = State(0, Edit[], formatopts)
     x = CSTParser.parse(text, true)
@@ -72,6 +73,58 @@ function format(text, formatopts::FormatOptions = FormatOptions())
     new_ast = CSTParser.remlineinfo!(Meta.parse(string("begin\n", text, "\nend")))
     original_ast != new_ast && error("Mismatch between AST of original and formatted text")
     return text
+end
+
+function format(path::AbstractPath, formatopts::FormatOptions = FormatOptions())
+    if isfile(path)
+        extension(path) != "jl" && error("Only .jl files can be formatted.")
+
+        content = read(path, String)
+        formatted_content = format(content, formatopts)
+        write(path, formatted_content)
+    elseif exists(path)
+        for p in walkpath(path)
+            if extension(p) == "jl"
+                format(p, formatopts)
+            end
+        end
+    else
+        error("Invalid path.")
+    end
+
+    return nothing
+end
+
+function isformatted(text::AbstractString, formatopts::FormatOptions = FormatOptions())
+    original_text = text
+    new_text = format(text, formatopts)
+
+    return original_text==new_text
+end
+
+function isformatted(path::AbstractPath, formatopts::FormatOptions = FormatOptions())
+    if isfile(path)
+        extension(path) != "jl" && error("Only .jl files can be formatted.")
+
+        content = read(path, String)
+        formatted_content = format(content, formatopts)
+        
+        return content == formatted_content
+    elseif exists(path)        
+        for p in walkpath(path)
+            if extension(p) == "jl"
+                if !isformatted(p, formatopts)
+                    return false
+                end
+            end
+        end
+
+        return true
+    else
+        error("Invalid path.")
+    end
+
+    return nothing
 end
 
 function pass(x, state, f = (x, state)->nothing)
