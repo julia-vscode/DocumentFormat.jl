@@ -105,11 +105,6 @@ using Test
         @test format("π:σ:汉") == "π:σ:汉"
     end
 
-    @testset "kw" begin
-        @test format("f(;a=1)") == "f(;a=1)"
-        @test format("f(;a = 1)") == "f(;a=1)"
-    end
-
 # @testset "func call" begin
 #     @test format("func(a, b, c)") == "func(a, b, c)"
 #     @test format("func(a,b,c)") == "func(a, b, c)"

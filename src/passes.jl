@@ -82,8 +82,8 @@ function call_pass(x, state)
             offset += a.fullspan
         end
     elseif x.typ === CSTParser.Kw
-        ensure_no_space_after(x.args[1], state, state.offset)
-        ensure_no_space_after(x.args[2], state, state.offset + x.args[1].fullspan)
+        ensure_single_space_after(x.args[1], state, state.offset)
+        ensure_single_space_after(x.args[2], state, state.offset + x.args[1].fullspan)
     end
 end
 
