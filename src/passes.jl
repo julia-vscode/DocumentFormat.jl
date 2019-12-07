@@ -181,7 +181,7 @@ function comments_pass(text, state)
                 end
 
             elseif length(val) > 1
-                if !(val[2] in (0x20, 0x09)) # ensure single space at start
+                if !(val[2] in (0x20, 0x09, 0x23)) # ensure single space at start
                     push!(state.edits, Edit(t.startbyte + 1, " "))
                 end
             end
