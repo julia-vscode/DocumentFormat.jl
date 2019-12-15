@@ -99,7 +99,7 @@ function isformatted(text::AbstractString, formatopts::FormatOptions = FormatOpt
     original_text = text
     new_text = format(text, formatopts)
 
-    return original_text==new_text
+    return original_text == new_text
 end
 
 function isformatted(path::AbstractPath, formatopts::FormatOptions = FormatOptions())
@@ -108,9 +108,9 @@ function isformatted(path::AbstractPath, formatopts::FormatOptions = FormatOptio
 
         content = read(path, String)
         formatted_content = format(content, formatopts)
-        
+
         return content == formatted_content
-    elseif exists(path)        
+    elseif exists(path)
         for p in walkpath(path)
             if extension(p) == "jl"
                 if !isformatted(p, formatopts)
