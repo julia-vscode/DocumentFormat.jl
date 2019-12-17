@@ -42,9 +42,9 @@ using Test
         @test format("X{π,汉 }") == "X{π,汉}"
         @test format("X{π,汉 }") == "X{π,汉}"
     end
-# @testset "unary ops" begin
-#     @test format("! x") == "!x"
-# end
+    @testset "unary ops" begin
+        @test_broken format("! x") == "!x"
+    end
     @testset "binary ops" begin
         @test format("a+b*c") == "a + b * c"
         @test format("a +b*c") == "a + b * c"
@@ -105,18 +105,18 @@ using Test
         @test format("π:σ:汉") == "π:σ:汉"
     end
 
-# @testset "func call" begin
-#     @test format("func(a, b, c)") == "func(a, b, c)"
-#     @test format("func(a,b,c)") == "func(a, b, c)"
-#     @test format("func(a,b,c,)") == "func(a, b, c,)"
-#     @test format("func(a,b,c, )") == "func(a, b, c,)"
-#     @test format("func( a,b,c    )") == "func(a, b, c)"
-#     @test format("func(a, b, c) ") == "func(a, b, c) "
-#     @test format("func(a, b; c)") == "func(a, b; c)"
-#     @test format("func(  a, b; c)") == "func(a, b; c)"
-#     @test format("func(a  ,b; c)") == "func(a, b; c)"
-#     @test format("func(a=1,b; c=1)") == "func(a = 1, b; c = 1)"
-# end
+    @testset "func call" begin
+        @test format("func(a, b, c)") == "func(a, b, c)"
+        @test format("func(a,b,c)") == "func(a, b, c)"
+        @test_broken format("func(a,b,c,)") == "func(a, b, c,)"
+        @test_broken format("func(a,b,c, )") == "func(a, b, c,)"
+        @test format("func( a,b,c    )") == "func(a, b, c)"
+        @test format("func(a, b, c) ") == "func(a, b, c) "
+        @test format("func(a, b; c)") == "func(a, b; c)"
+        @test format("func(  a, b; c)") == "func(a, b; c)"
+        @test format("func(a  ,b; c)") == "func(a, b; c)"
+        @test format("func(a=1,b; c=1)") == "func(a = 1, b; c = 1)"
+    end
 
     @testset "indents" begin
         @testset "begin" begin
@@ -431,83 +431,83 @@ end"""
         end""") == str
     end
 
-# @testset "docs" begin
-#     str = """
-#     \"""
-#     doc
-#     \"""
-#     function f()
-#         20
-#     end"""
+@testset "docs" begin
+    str = """
+    \"""
+    doc
+    \"""
+    function f()
+        20
+    end"""
 
-#     @test format("""
-#     \"""doc
-#     \"""
-#     function f()
-#         20
-#     end""") == str
-#     @test format("""
-#     \"""
-#     doc\"""
-#     function f()
-#         20
-#     end""") == str
-#     @test format("""
-#     \"""doc\"""
-#     function f()
-#         20
-#     end""") == str
+    @test_broken format("""
+    \"""doc
+    \"""
+    function f()
+        20
+    end""") == str
+    @test_broken format("""
+    \"""
+    doc\"""
+    function f()
+        20
+    end""") == str
+    @test_broken format("""
+    \"""doc\"""
+    function f()
+        20
+    end""") == str
 
-#     @test format("""
-#     "doc
-#     "
-#     function f()
-#         20
-#     end""") == str
-#     @test format("""
-#     "
-#     doc"
-#     function f()
-#         20
-#     end""") == str
-#     @test format("""
-#     "doc"
-#     function f()
-#         20
-#     end""") == str
+    @test_broken format("""
+    "doc
+    "
+    function f()
+        20
+    end""") == str
+    @test_broken format("""
+    "
+    doc"
+    function f()
+        20
+    end""") == str
+    @test_broken format("""
+    "doc"
+    function f()
+        20
+    end""") == str
 
-#     # tests indentation and correctly formatting a docstring with escapes
-#     str = """
-#        begin
-#            \"""
-#                f
+    # tests indentation and correctly formatting a docstring with escapes
+    str = """
+       begin
+           \"""
+               f
 
-#            docstring for f
-#            :(function \$(dict[:name]){\$(all_params...)}(\$(dict[:args]...);
-#                                                 \$(dict[:kwargs]...))::\$rtype
-#            \$(dict[:body])
-#            \"""
-#            function f()
-#                100
-#            end
-#        end"""
-#     @test format("""
-#        begin
-#        \"""
+           docstring for f
+           :(function \$(dict[:name]){\$(all_params...)}(\$(dict[:args]...);
+                                                \$(dict[:kwargs]...))::\$rtype
+           \$(dict[:body])
+           \"""
+           function f()
+               100
+           end
+       end"""
+    @test_broken format("""
+       begin
+       \"""
 
-#            f
+           f
 
-#        docstring for f
-#        :(function \$(dict[:name]){\$(all_params...)}(\$(dict[:args]...);
-#                                             \$(dict[:kwargs]...))::\$rtype
-#        \$(dict[:body])
+       docstring for f
+       :(function \$(dict[:name]){\$(all_params...)}(\$(dict[:args]...);
+                                            \$(dict[:kwargs]...))::\$rtype
+       \$(dict[:body])
 
-#        \"""
-#        function f()
-#            100
-#        end
-#        end""") == str
-# end
+       \"""
+       function f()
+           100
+       end
+       end""") == str
+end
 
     @testset "Public API" begin
 
