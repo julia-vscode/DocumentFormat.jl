@@ -2,6 +2,7 @@ module DocumentFormat
 using CSTParser
 using CSTParser.Tokenize
 import CSTParser.Tokenize.Tokens
+using CSTParser: typof, kindof
 using FilePathsBase
 
 mutable struct FormatOptions
