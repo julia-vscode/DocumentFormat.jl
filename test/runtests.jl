@@ -512,12 +512,12 @@ end
     @testset "Public API" begin
 
         original = """
-   function  bar(x   ,  y   =  3)
+   function bar(x   ,  y   =  3)
        end
 """
 
         original_should = """
-function  bar(x,  y   =  3)
+function bar(x,  y   =  3)
 end
 """
 
@@ -537,5 +537,8 @@ end
         end
 
     end
-
+    @testset "kw format" begin
+        @test format("function  f end") == "function f end"
+        @test format("function f end") == "function f end"
+    end
 end

@@ -159,6 +159,36 @@ function doc_pass(x, state)
     end
 end
 
+function kw_pass(x, state)
+    if typof(x) === CSTParser.KEYWORD &&
+        kindof(x) in (CSTParser.Tokens.ABSTRACT,
+                      CSTParser.Tokens.BAREMODULE,
+                      CSTParser.Tokens.CONST,
+                      CSTParser.Tokens.DO,
+                      CSTParser.Tokens.ELSEIF,
+                      CSTParser.Tokens.EXPORT,
+                      CSTParser.Tokens.FOR,
+                      CSTParser.Tokens.FUNCTION,
+                      CSTParser.Tokens.GLOBAL,
+                      CSTParser.Tokens.IF,
+                      CSTParser.Tokens.IMPORT,
+                      CSTParser.Tokens.LOCAL,
+                      CSTParser.Tokens.MACRO,
+                      CSTParser.Tokens.MODULE,
+                      CSTParser.Tokens.MUTABLE,
+                      CSTParser.Tokens.OUTER,
+                      CSTParser.Tokens.PRIMITIVE,
+                      CSTParser.Tokens.STRUCT,
+                      CSTParser.Tokens.TYPE,
+                      CSTParser.Tokens.USING,
+                      CSTParser.Tokens.WHILE
+                      )
+        ensure_exactly_single_space_after(x, state, state.offset)
+    end
+end
+
+
+
 function comments_pass(text, state)
     ts = tokenize(text)
     while !Tokenize.Lexers.eof(ts)
