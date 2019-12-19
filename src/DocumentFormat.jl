@@ -16,8 +16,9 @@ mutable struct FormatOptions
     comments::Bool
     docs::Bool
     lineends::Bool
+    kw::Bool
 end
-FormatOptions() = FormatOptions(4, true, true, true, true, true, true, true, true, true)
+FormatOptions() = FormatOptions(4, true, true, true, true, true, true, true, true, true, true)
 
 struct Edit{T}
     loc::T
@@ -60,6 +61,11 @@ function format(text::AbstractString, formatopts::FormatOptions = FormatOptions(
         state.offset = 0
         pass(x, state, doc_pass)
     end
+    if formatopts.kw
+        state.offset = 0
+        pass(x, state, kw_pass)
+    end
+
     if formatopts.lineends
         lineends_pass(text, state)
     end
@@ -143,13 +149,18 @@ end
 function ensure_single_space_after(x, state, offset)
     if x.fullspan == x.span
         push!(state.edits, Edit(offset + x.fullspan, " "))
-
     end
 end
 
 function ensure_no_space_after(x, state, offset)
     if x.fullspan != x.span
         push!(state.edits, Edit(offset .+ (x.span + 1:x.fullspan), ""))
+    end
+end
+
+function ensure_exactly_single_space_after(x, state, offset)
+    if x.fullspan !== x.span + 1
+        push!(state.edits, Edit(offset .+ (x.span + 1:x.fullspan), " "))
     end
 end
 
