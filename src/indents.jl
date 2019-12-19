@@ -11,8 +11,8 @@ function get_lines(text)
     pt = Tokens.EMPTY_TOKEN(Tokens.Token)
     for t in CSTParser.Tokenize.tokenize(text)
         if pt.endpos[1] != t.startpos[1]
-            if t.kind == Tokens.WHITESPACE
-                nl = findfirst("\n", t.val) != nothing
+            if kindof(t) == Tokens.WHITESPACE
+                nl = findfirst("\n", t.val) !== nothing
                 if !nl
                     push!(lines, (length(t.val), 0))
                 else
@@ -20,12 +20,12 @@ function get_lines(text)
             else
                 push!(lines, (0, 0))
             end
-        elseif t.startpos[1] != t.endpos[1] && t.kind == Tokens.TRIPLE_STRING
+        elseif t.startpos[1] != t.endpos[1] && kindof(t) == Tokens.TRIPLE_STRING
             nls = findall(x->x == '\n', t.val)
             for nl in nls
                 push!(lines, (t.startpos[2] - 1, nl + t.startbyte))
             end
-        elseif t.startpos[1] != t.endpos[1] && t.kind == Tokens.WHITESPACE
+        elseif t.startpos[1] != t.endpos[1] && kindof(t) == Tokens.WHITESPACE
             push!(lines, (t.endpos[2], t.endbyte - t.endpos[2] + 1))
         end
         pt = t
@@ -34,12 +34,12 @@ function get_lines(text)
 end
 
 function indent_pass(x, state)
-    if x.typ === CSTParser.FileH
+    if typof(x) === CSTParser.FileH
         for a in x.args
             check_indent(a, state)
             indent_pass(a, state)
         end
-    elseif x.typ === CSTParser.Begin || (x.typ === CSTParser.Quote && x.args[1].typ === CSTParser.KEYWORD && x.args[1].kind == Tokens.QUOTE)
+    elseif typof(x) === CSTParser.Begin || (typof(x) === CSTParser.Quote && typof(x.args[1]) === CSTParser.KEYWORD && kindof(x.args[1]) == Tokens.QUOTE)
         state.offset += x.args[1].fullspan
         state.edits.indent += 1
         for a in x.args[2].args
@@ -49,9 +49,9 @@ function indent_pass(x, state)
         state.edits.indent -= 1
         check_indent(x.args[3], state)
         state.offset += x.args[3].fullspan
-    elseif x.typ in (CSTParser.FunctionDef, CSTParser.Macro, CSTParser.For, CSTParser.While, CSTParser.Struct)
+    elseif typof(x) in (CSTParser.FunctionDef, CSTParser.Macro, CSTParser.For, CSTParser.While, CSTParser.Struct)
         state.offset += x.args[1].fullspan + x.args[2].fullspan
-        if x.args[3].typ === CSTParser.Block
+        if typof(x.args[3]) === CSTParser.Block
             state.edits.indent += 1
             for a in x.args[3].args
                 check_indent(a, state)
@@ -64,9 +64,9 @@ function indent_pass(x, state)
             check_indent(x.args[3], state)
             state.offset += x.args[3].fullspan
         end
-    elseif x.typ === CSTParser.Do
+    elseif typof(x) === CSTParser.Do
         state.offset += x.args[1].fullspan + x.args[2].fullspan + x.args[3].fullspan
-        if x.args[4].typ === CSTParser.Block
+        if typof(x.args[4]) === CSTParser.Block
             state.edits.indent += 1
             for a in x.args[4].args
                 check_indent(a, state)
@@ -79,8 +79,8 @@ function indent_pass(x, state)
             check_indent(x.args[4], state)
             state.offset += x.args[4].fullspan
         end
-    elseif x.typ === CSTParser.MacroCall
-        if x.args[1].typ === CSTParser.GlobalRefDoc
+    elseif typof(x) === CSTParser.MacroCall
+        if typof(x.args[1]) === CSTParser.GlobalRefDoc
             state.offset += x.args[1].fullspan
 
             doc = x.args[2]
@@ -108,9 +108,9 @@ function indent_pass(x, state)
                 indent_pass(a, state)
             end
         end
-    elseif x.typ === CSTParser.Mutable
+    elseif typof(x) === CSTParser.Mutable
         state.offset += x.args[1].fullspan + x.args[2].fullspan + x.args[3].fullspan
-        if x.args[4].typ === CSTParser.Block
+        if typof(x.args[4]) === CSTParser.Block
             state.edits.indent += 1
             for a in x.args[4].args
                 check_indent(a, state)
@@ -123,7 +123,7 @@ function indent_pass(x, state)
             check_indent(x.args[3], state)
             state.offset += x.args[4].fullspan
         end
-    elseif x.typ === CSTParser.Try
+    elseif typof(x) === CSTParser.Try
         state.offset += x.args[1].fullspan
 
         state.edits.indent += 1
@@ -144,8 +144,8 @@ function indent_pass(x, state)
         check_indent(x.args[6], state)
         state.offset += x.args[6].fullspan
 
-    elseif x.typ === CSTParser.If
-        if first(x.args).typ === CSTParser.KEYWORD && first(x.args).kind == Tokens.IF
+    elseif typof(x) === CSTParser.If
+        if typof(first(x.args)) === CSTParser.KEYWORD && kindof(first(x.args)) == Tokens.IF
             state.offset += x.args[1].fullspan + x.args[2].fullspan
             state.edits.indent += 1
             for a in x.args[3].args
@@ -183,7 +183,7 @@ function indent_pass(x, state)
 
             end
         end
-    elseif x.typ === CSTParser.Let
+    elseif typof(x) === CSTParser.Let
         if length(x.args) > 3
             state.offset += x.args[1].fullspan + x.args[2].fullspan
             state.edits.indent += 1
@@ -206,7 +206,7 @@ function indent_pass(x, state)
             state.offset += x.args[3].fullspan
         end
 
-    elseif x.typ in (CSTParser.IDENTIFIER, CSTParser.OPERATOR, CSTParser.KEYWORD, CSTParser.PUNCTUATION, CSTParser.LITERAL)
+    elseif typof(x) in (CSTParser.IDENTIFIER, CSTParser.OPERATOR, CSTParser.KEYWORD, CSTParser.PUNCTUATION, CSTParser.LITERAL)
         state.offset += x.fullspan
     else
         for a in x.args
