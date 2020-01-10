@@ -2,35 +2,7 @@ const INDENT = 4
 
 mutable struct IndentState
     indent::Int
-    lines
     edits
-end
-
-function get_lines(text)
-    lines = Tuple{Int,Int}[]
-    pt = Tokens.EMPTY_TOKEN(Tokens.Token)
-    for t in CSTParser.Tokenize.tokenize(text)
-        if pt.endpos[1] != t.startpos[1]
-            if kindof(t) == Tokens.WHITESPACE
-                nl = findfirst("\n", t.val) !== nothing
-                if !nl
-                    push!(lines, (length(t.val), 0))
-                else
-                end
-            else
-                push!(lines, (0, 0))
-            end
-        elseif t.startpos[1] != t.endpos[1] && kindof(t) == Tokens.TRIPLE_STRING
-            nls = findall(x->x == '\n', t.val)
-            for nl in nls
-                push!(lines, (t.startpos[2] - 1, nl + t.startbyte))
-            end
-        elseif t.startpos[1] != t.endpos[1] && kindof(t) == Tokens.WHITESPACE
-            push!(lines, (t.endpos[2], t.endbyte - t.endpos[2] + 1))
-        end
-        pt = t
-    end
-    lines
 end
 
 function indent_pass(x, state)
@@ -217,7 +189,7 @@ function indent_pass(x, state)
 end
 
 function check_indent(x, state)
-    for (i, l) in state.edits.lines
+    for (l, i) in state.lines
         if state.offset == l + i
             if state.edits.indent * INDENT != i
                 #= @info CSTParser.str_value(CSTParser.get_name(x)), state.edits.indent*INDENT, i, state.offset =#
@@ -229,8 +201,8 @@ end
 
 function indents(text, opts)
     x = CSTParser.parse(text, true)
-    lines = get_lines(text)
-    state = indent_pass(x, State(0, IndentState(0, lines, []), opts))
+    
+    state = indent_pass(x, State(0, IndentState(0, []), opts, text, get_lines(text)))
 
     sort!(state.edits.edits, lt = (a, b)->a[1] < b[1], rev = true)
     for (l, d) in state.edits.edits

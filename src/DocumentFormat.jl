@@ -29,11 +29,14 @@ mutable struct State{T}
     offset::Int
     edits::T
     opts::FormatOptions
+    text
+    lines::Vector{Tuple{Int,Int}}
 end
 
-function format(text::AbstractString, formatopts::FormatOptions = FormatOptions())
+function format(original_text::AbstractString, formatopts::FormatOptions = FormatOptions())
+    text = deepcopy(original_text)
     original_ast = CSTParser.remlineinfo!(Meta.parse(string("begin\n", text, "\nend")))
-    state = State(0, Edit[], formatopts)
+    state = State(0, Edit[], formatopts, text, get_lines(text))
     x = CSTParser.parse(text, true)
     if formatopts.ops
         pass(x, state, operator_pass)
@@ -67,7 +70,7 @@ function format(text::AbstractString, formatopts::FormatOptions = FormatOptions(
     end
 
     if formatopts.lineends
-        lineends_pass(text, state)
+        lineends_pass(text, x, state)
     end
     sort!(state.edits, lt = (a, b)->first(a.loc) < first(b.loc), rev = true)
 
@@ -77,8 +80,15 @@ function format(text::AbstractString, formatopts::FormatOptions = FormatOptions(
     if formatopts.indents
         text = indents(text, state.opts)
     end
-    new_ast = CSTParser.remlineinfo!(Meta.parse(string("begin\n", text, "\nend")))
-    original_ast != new_ast && error("Mismatch between AST of original and formatted text")
+    new_ast = CSTParser.remlineinfo!(Meta.parse(string("begin\n", text, "\nend"), raise = false))
+    if new_ast.head == :error 
+        @warn ("There was an error in the formatted text, original returned.")
+        return original_text
+    elseif original_ast != new_ast
+        @warn ("Mismatch between AST of original and formatted text")
+        return original_text
+    end
+
     return text
 end
 
@@ -174,4 +184,5 @@ function apply(text, edit::Edit{UnitRange{Int}})
 end
 include("passes.jl")
 include("indents.jl")
+include("utils.jl")
 end

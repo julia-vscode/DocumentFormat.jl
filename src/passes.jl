@@ -70,16 +70,20 @@ end
 
 function call_pass(x, state)
     if typof(x) === CSTParser.Call
-        offset = state.offset + x.args[1].fullspan
-        n = length(x)
-        for (i, a) in enumerate(x)
-            i == 1 && continue
-            if typof(a) === CSTParser.PUNCTUATION && kindof(a) === Tokens.COMMA
-                ensure_single_space_after(a, state, offset)
-            elseif i != n && !(typof(x.args[i + 1]) === CSTParser.Parameters)
-                ensure_no_space_after(a, state, offset)
+        if issameline(state.offset, state.offset + x.span, state.lines)
+            offset = state.offset + x.args[1].fullspan
+            n = length(x)
+            for (i, a) in enumerate(x)
+                i == 1 && continue
+                if typof(a) === CSTParser.PUNCTUATION && kindof(a) === Tokens.COMMA
+                    ensure_single_space_after(a, state, offset)
+                elseif i != n && !(typof(x.args[i + 1]) === CSTParser.Parameters)
+                    ensure_no_space_after(a, state, offset)
+                end
+                offset += a.fullspan
             end
-            offset += a.fullspan
+        else
+            # space holder for splitting calls across lines
         end
     elseif typof(x) === CSTParser.Kw
         ensure_single_space_after(x.args[1], state, state.offset)
@@ -181,8 +185,7 @@ function kw_pass(x, state)
                       CSTParser.Tokens.STRUCT,
                       CSTParser.Tokens.TYPE,
                       CSTParser.Tokens.USING,
-                      CSTParser.Tokens.WHILE
-                      )
+                      CSTParser.Tokens.WHILE)
         ensure_exactly_single_space_after(x, state, state.offset)
     end
 end
@@ -221,7 +224,7 @@ end
 
 
 
-function lineends_pass(text, state)
+function lineends_pass(text, x, state)
     n = sizeof(text)
     io = IOBuffer(reverse(text))
     while !eof(io)
@@ -234,7 +237,8 @@ function lineends_pass(text, state)
                 i2 = position(io)
                 pc = read(io, UInt8)
             end
-            if i1 != i2
+            if i1 != i2 && (y = get_expr(x, n - i1); y isa CSTParser.EXPR ? 
+                !(y.typ == CSTParser.LITERAL && y.kind in (CSTParser.Tokens.STRING, CSTParser.Tokens.TRIPLE_STRING, CSTParser.Tokens.CMD, CSTParser.Tokens.TRIPLE_CMD)) : true)
                 push!(state.edits, Edit((n - i2) + 1:(n - i1), ""))
             end
         end
