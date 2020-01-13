@@ -431,8 +431,8 @@ end"""
         end""") == str
     end
 
-@testset "docs" begin
-    str = """
+    @testset "docs" begin
+        str = """
     \"""
     doc
     \"""
@@ -440,44 +440,44 @@ end"""
         20
     end"""
 
-    @test_broken format("""
+        @test_broken format("""
     \"""doc
     \"""
     function f()
         20
     end""") == str
-    @test_broken format("""
+        @test_broken format("""
     \"""
     doc\"""
     function f()
         20
     end""") == str
-    @test_broken format("""
+        @test_broken format("""
     \"""doc\"""
     function f()
         20
     end""") == str
 
-    @test_broken format("""
+        @test_broken format("""
     "doc
     "
     function f()
         20
     end""") == str
-    @test_broken format("""
+        @test_broken format("""
     "
     doc"
     function f()
         20
     end""") == str
-    @test_broken format("""
+        @test_broken format("""
     "doc"
     function f()
         20
     end""") == str
 
     # tests indentation and correctly formatting a docstring with escapes
-    str = """
+        str = """
        begin
            \"""
                f
@@ -491,7 +491,7 @@ end"""
                100
            end
        end"""
-    @test_broken format("""
+        @test_broken format("""
        begin
        \"""
 
@@ -507,7 +507,7 @@ end"""
            100
        end
        end""") == str
-end
+    end
 
     @testset "Public API" begin
 
