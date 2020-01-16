@@ -35,7 +35,11 @@ end
 
 function format(original_text::AbstractString, formatopts::FormatOptions = FormatOptions())
     text = deepcopy(original_text)
-    original_ast = CSTParser.remlineinfo!(Meta.parse(string("begin\n", text, "\nend")))
+    original_ast = CSTParser.remlineinfo!(Meta.parse(string("begin\n", text, "\nend"), raise = false))
+    if original_ast.head == :error
+        @warn ("There was an error in the original ast, original text returned.")
+        return text
+    end
     state = State(0, Edit[], formatopts, text, get_lines(text))
     x = CSTParser.parse(text, true)
     if formatopts.ops
