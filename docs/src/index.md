@@ -1,3 +1,7 @@
+```@meta
+CurrentModule = DocumentFormat
+```
+
 # DocumentFormat
 
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://julia-vscode.github.io/DocumentFormat.jl/dev)
