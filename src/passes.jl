@@ -225,7 +225,7 @@ end
 
 
 function lineends_pass(text, x, state)
-    n = sizeof(text)
+    n = lastindex(text)
     io = IOBuffer(reverse(text))
     while !eof(io)
         c = read(io, Char)

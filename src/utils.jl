@@ -20,7 +20,7 @@ function get_lines(s::String)
             push!(lines, (position(io), readindent(io)))
         end
     end
-    first(last(lines)) != sizeof(s) && push!(lines, (sizeof(s), 0))
+    first(last(lines)) != lastindex(s) && push!(lines, (lastindex(s), 0))
     lines
 end
 
