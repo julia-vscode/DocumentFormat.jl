@@ -44,7 +44,7 @@ function get_expr(x, offset, pos = 0)
     if pos > offset
         return nothing
     end
-    if x.args !== nothing
+    if x.args isa Vector{EXPR}
         for a in x.args
             if pos < offset <= (pos + a.fullspan)
                 return get_expr(a, offset, pos)

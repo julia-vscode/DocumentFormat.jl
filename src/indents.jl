@@ -7,16 +7,20 @@ end
 
 function indent_pass(x, state)
     if typof(x) === CSTParser.FileH
-        for a in x.args
-            check_indent(a, state)
-            indent_pass(a, state)
+        if x.args isa Vector{EXPR}
+            for a in x.args
+                check_indent(a, state)
+                indent_pass(a, state)
+            end
         end
     elseif typof(x) === CSTParser.Begin || (typof(x) === CSTParser.Quote && typof(x.args[1]) === CSTParser.KEYWORD && kindof(x.args[1]) == Tokens.QUOTE)
         state.offset += x.args[1].fullspan
         state.edits.indent += 1
-        for a in x.args[2].args
-            check_indent(a, state)
-            indent_pass(a, state)
+        if x.args isa Vector{EXPR} && length(x.args) > 1 && x.args[2].args isa Vector{EXPR}
+            for a in x.args[2].args
+                check_indent(a, state)
+                indent_pass(a, state)
+            end
         end
         state.edits.indent -= 1
         check_indent(x.args[3], state)
@@ -25,9 +29,11 @@ function indent_pass(x, state)
         state.offset += x.args[1].fullspan + x.args[2].fullspan
         if typof(x.args[3]) === CSTParser.Block
             state.edits.indent += 1
-            for a in x.args[3].args
-                check_indent(a, state)
-                indent_pass(a, state)
+            if x.args[3].args isa Vector{EXPR}
+                for a in x.args[3].args
+                    check_indent(a, state)
+                    indent_pass(a, state)
+                end
             end
             state.edits.indent -= 1
             check_indent(x.args[4], state)
@@ -40,9 +46,11 @@ function indent_pass(x, state)
         state.offset += x.args[1].fullspan + x.args[2].fullspan + x.args[3].fullspan
         if typof(x.args[4]) === CSTParser.Block
             state.edits.indent += 1
-            for a in x.args[4].args
-                check_indent(a, state)
-                indent_pass(a, state)
+            if x.args[4].args isa Vector{EXPR}
+                for a in x.args[4].args
+                    check_indent(a, state)
+                    indent_pass(a, state)
+                end
             end
             state.edits.indent -= 1
             check_indent(x.args[5], state)
@@ -84,9 +92,11 @@ function indent_pass(x, state)
         state.offset += x.args[1].fullspan + x.args[2].fullspan + x.args[3].fullspan
         if typof(x.args[4]) === CSTParser.Block
             state.edits.indent += 1
-            for a in x.args[4].args
-                check_indent(a, state)
-                indent_pass(a, state)
+            if x.args[4].args isa Vector{EXPR}
+                for a in x.args[4].args
+                    check_indent(a, state)
+                    indent_pass(a, state)
+                end
             end
             state.edits.indent -= 1
             check_indent(x.args[5], state)
@@ -99,18 +109,22 @@ function indent_pass(x, state)
         state.offset += x.args[1].fullspan
 
         state.edits.indent += 1
-        for a in x.args[2].args
-            check_indent(a, state)
-            indent_pass(a, state)
+        if x.args[2].args isa Vector{EXPR}
+            for a in x.args[2].args
+                check_indent(a, state)
+                indent_pass(a, state)
+            end
         end
         state.edits.indent -= 1
         check_indent(x.args[3], state)
         state.offset += x.args[3].fullspan + x.args[4].fullspan
 
         state.edits.indent += 1
-        for a in x.args[5].args
-            check_indent(a, state)
-            indent_pass(a, state)
+        if x.args isa Vector{EXPR} && length(x.args) >= 5 && x.args[5].args isa Vector{EXPR}
+            for a in x.args[5].args
+                check_indent(a, state)
+                indent_pass(a, state)
+            end
         end
         state.edits.indent -= 1
         check_indent(x.args[6], state)
@@ -120,18 +134,22 @@ function indent_pass(x, state)
         if typof(first(x.args)) === CSTParser.KEYWORD && kindof(first(x.args)) == Tokens.IF
             state.offset += x.args[1].fullspan + x.args[2].fullspan
             state.edits.indent += 1
-            for a in x.args[3].args
-                check_indent(a, state)
-                indent_pass(a, state)
+            if x.args[3].args isa Vector{EXPR}
+                for a in x.args[3].args
+                    check_indent(a, state)
+                    indent_pass(a, state)
+                end
             end
             state.edits.indent -= 1
             check_indent(x.args[4], state)
             state.offset += x.args[4].fullspan
             if length(x.args) > 4
                 state.edits.indent += 1
-                for a in x.args[5].args
-                    check_indent(a, state)
-                    indent_pass(a, state)
+                if x.args[5].args isa Vector{EXPR}
+                    for a in x.args[5].args
+                        check_indent(a, state)
+                        indent_pass(a, state)
+                    end
                 end
                 state.edits.indent -= 1
                 check_indent(x.args[6], state)
@@ -139,29 +157,34 @@ function indent_pass(x, state)
             end
         else
             state.offset += x.args[1].fullspan
-            for a in x.args[2].args
-                check_indent(a, state)
-                indent_pass(a, state)
+            if x.args[2].args isa Vector{EXPR}
+                for a in x.args[2].args
+                    check_indent(a, state)
+                    indent_pass(a, state)
+                end
             end
             if length(x.args) > 2
                 state.edits.indent -= 1
                 check_indent(x.args[3], state)
                 state.offset += x.args[3].fullspan
                 state.edits.indent += 1
-                for a in x.args[4].args
-                    check_indent(a, state)
-                    indent_pass(a, state)
+                if x.args[4].args isa Vector{EXPR}
+                    for a in x.args[4].args
+                        check_indent(a, state)
+                        indent_pass(a, state)
+                    end
                 end
-
             end
         end
     elseif typof(x) === CSTParser.Let
         if length(x.args) > 3
             state.offset += x.args[1].fullspan + x.args[2].fullspan
             state.edits.indent += 1
-            for a in x.args[3].args
-                check_indent(a, state)
-                indent_pass(a, state)
+            if x.args[3].args isa Vector{EXPR}
+                for a in x.args[3].args
+                    check_indent(a, state)
+                    indent_pass(a, state)
+                end
             end
             state.edits.indent -= 1
             check_indent(x.args[4], state)
@@ -169,9 +192,11 @@ function indent_pass(x, state)
         else
             state.offset += x.args[1].fullspan
             state.edits.indent += 1
-            for a in x.args[2].args
-                check_indent(a, state)
-                indent_pass(a, state)
+            if x.args[2].args isa Vector{EXPR}
+                for a in x.args[2].args
+                    check_indent(a, state)
+                    indent_pass(a, state)
+                end
             end
             state.edits.indent -= 1
             check_indent(x.args[3], state)
@@ -181,8 +206,10 @@ function indent_pass(x, state)
     elseif typof(x) in (CSTParser.IDENTIFIER, CSTParser.OPERATOR, CSTParser.KEYWORD, CSTParser.PUNCTUATION, CSTParser.LITERAL)
         state.offset += x.fullspan
     else
-        for a in x.args
-            indent_pass(a, state)
+        if x.args isa Vector{EXPR}
+            for a in x.args
+                indent_pass(a, state)
+            end
         end
     end
     state
