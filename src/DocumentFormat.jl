@@ -2,7 +2,7 @@ module DocumentFormat
 using CSTParser
 using CSTParser.Tokenize
 import CSTParser.Tokenize.Tokens
-using CSTParser: typof, kindof
+using CSTParser: typof, kindof, EXPR
 using FilePathsBase
 
 mutable struct FormatOptions
@@ -150,7 +150,7 @@ end
 
 function pass(x, state, f = (x, state)->nothing)
     f(x, state)
-    if x.args isa Vector
+    if x.args isa Vector{EXPR}
         for a in x.args
             pass(a, state, f)
         end
