@@ -214,7 +214,7 @@ function comments_pass(text, state)
                 end
 
             elseif length(val) > 1
-                t.startpos = (1,1) && val[2] == 0x21 && continue # don't mess with the shebang
+                t.startpos == (1,1) && val[2] == 0x21 && continue # don't mess with the shebang
                 if !(val[2] in (0x20, 0x09, 0x23)) # ensure single space at start
                     push!(state.edits, Edit(t.startbyte + 1, " "))
                 end
