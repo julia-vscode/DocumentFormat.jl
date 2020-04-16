@@ -2,7 +2,7 @@ using DocumentFormat: format, isformatted
 using FilePathsBase
 using Test
 
-@testset "All" begin
+@testset "DocumentFormat" begin
     @testset "basic" begin
         @test format("a") == "a"
     end
