@@ -20,6 +20,10 @@ mutable struct FormatOptions
 end
 FormatOptions() = FormatOptions(4, true, true, true, true, true, true, true, true, true, true)
 
+# Default to 4-space indentation with all options on
+FormatOptions(indent, options::Vararg{Union{Bool,Nothing},10}) =
+    FormatOptions(something(indent, 4), something.(options, true))
+
 struct Edit{T}
     loc::T
     text::String
