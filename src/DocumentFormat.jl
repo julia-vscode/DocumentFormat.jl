@@ -7,7 +7,7 @@ using FilePathsBase
 
 const default_options = (4, true, true, true, true, true, true, true, true, false, true)
 
-mutable struct FormatOptions
+struct FormatOptions
     indent::Int
     indents::Bool
     ops::Bool
