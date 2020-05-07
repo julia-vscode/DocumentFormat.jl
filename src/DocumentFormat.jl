@@ -5,7 +5,9 @@ import CSTParser.Tokenize.Tokens
 using CSTParser: typof, kindof, EXPR
 using FilePathsBase
 
-mutable struct FormatOptions
+const default_options = (4, true, true, true, true, true, true, true, true, false, true)
+
+struct FormatOptions
     indent::Int
     indents::Bool
     ops::Bool
@@ -18,7 +20,11 @@ mutable struct FormatOptions
     lineends::Bool
     kw::Bool
 end
-FormatOptions() = FormatOptions(4, true, true, true, true, true, true, true, true, true, true)
+FormatOptions() = FormatOptions(default_options...)
+
+# Default to 4-space indentation with all options on
+FormatOptions(options::Vararg{Union{Int,Bool,Nothing},length(default_options)}) =
+    FormatOptions(something.(options, default_options)...)
 
 struct Edit{T}
     loc::T
