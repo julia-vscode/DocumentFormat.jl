@@ -527,9 +527,9 @@ end
 
         mktempdir() do temp_dir
             temp_dir = Path(temp_dir)
-            write(join(temp_dir, "original.jl"), original)
+            write(joinpath(temp_dir, "original.jl"), original)
 
-            @test isformatted(join(temp_dir, "original.jl")) == false
+            @test isformatted(joinpath(temp_dir, "original.jl")) == false
             @test isformatted(temp_dir) == false
 
             format(temp_dir)
