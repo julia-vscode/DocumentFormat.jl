@@ -228,7 +228,7 @@ end
 
 function indents(text, opts)
     x = CSTParser.parse(text, true)
-    
+
     state = indent_pass(x, State(0, IndentState(0, []), opts, text, get_lines(text)))
 
     sort!(state.edits.edits, lt = (a, b)->a[1] < b[1], rev = true)
