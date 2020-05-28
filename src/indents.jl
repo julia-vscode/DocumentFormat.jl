@@ -5,6 +5,7 @@ mutable struct IndentState
     edits
 end
 
+is_testset_block(x) = CSTParser.parentof(x) isa EXPR && typof(CSTParser.parentof(x)) === CSTParser.MacroCall && length(CSTParser.parentof(x)[1]) == 2 && CSTParser.valof(CSTParser.parentof(x)[1][2]) == "testset"
 function indent_pass(x, state)
     if typof(x) === CSTParser.FileH
         if x.args isa Vector{EXPR}
@@ -13,7 +14,7 @@ function indent_pass(x, state)
                 indent_pass(a, state)
             end
         end
-    elseif typof(x) === CSTParser.Begin || (typof(x) === CSTParser.Quote && typof(x.args[1]) === CSTParser.KEYWORD && kindof(x.args[1]) == Tokens.QUOTE)
+    elseif (typof(x) === CSTParser.Begin && !is_testset_block(x)) || (typof(x) === CSTParser.Quote && typof(x.args[1]) === CSTParser.KEYWORD && kindof(x.args[1]) == Tokens.QUOTE)
         state.offset += x.args[1].fullspan
         state.edits.indent += 1
         if x.args isa Vector{EXPR} && length(x.args) > 1 && x.args[2].args isa Vector{EXPR}
