@@ -92,7 +92,7 @@ function format(original_text::AbstractString, formatopts::FormatOptions = Forma
         text = indents(text, state.opts)
     end
     new_ast = CSTParser.remlineinfo!(Meta.parse(string("begin\n", text, "\nend"), raise = false))
-    if new_ast.head == :error 
+    if new_ast.head == :error
         @warn ("There was an error in the formatted text, original returned.")
         return original_text
     elseif original_ast != new_ast

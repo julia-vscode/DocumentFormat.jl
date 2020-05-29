@@ -29,7 +29,7 @@ function line_of(offset, lines)
     offset > first(last(lines)) && error()
     offset == 0 && return 1
     for i = 1:length(lines) - 1
-        if lines[i][1] < offset <= lines[i + 1][1] 
+        if lines[i][1] < offset <= lines[i + 1][1]
             return i
         end
     end
