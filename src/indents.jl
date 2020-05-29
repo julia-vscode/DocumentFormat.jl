@@ -129,6 +129,19 @@ function indent_pass(x, state)
         state.edits.indent -= 1
         check_indent(x.args[6], state)
         state.offset += x.args[6].fullspan
+        
+        if length(x) == 8
+            state.edits.indent += 1
+            if x.args[7].args isa Vector{EXPR}
+                for a in x.args[7].args
+                    check_indent(a, state)
+                    indent_pass(a, state)
+                end
+            end
+            state.edits.indent -= 1
+            check_indent(x.args[8], state)
+            state.offset += x.args[8].fullspan
+        end
 
     elseif typof(x) === CSTParser.If
         if typof(first(x.args)) === CSTParser.KEYWORD && kindof(first(x.args)) == Tokens.IF
