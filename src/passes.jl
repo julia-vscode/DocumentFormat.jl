@@ -214,7 +214,7 @@ function comments_pass(text, state)
                 end
 
             elseif length(val) > 1
-                t.startpos == (1,1) && val[2] == 0x21 && continue # don't mess with the shebang
+                t.startpos == (1, 1) && val[2] == 0x21 && continue # don't mess with the shebang
                 if !(val[2] in (0x20, 0x09, 0x23)) # ensure single space at start
                     push!(state.edits, Edit(t.startbyte + 1, " "))
                 end
@@ -238,7 +238,7 @@ function lineends_pass(text, x, state)
                 i2 = position(io)
                 pc = read(io, UInt8)
             end
-            if i1 != i2 && (y = get_expr(x, n - i1); y isa CSTParser.EXPR ? 
+            if i1 != i2 && (y = get_expr(x, n - i1); y isa CSTParser.EXPR ?
                 !(y.typ == CSTParser.LITERAL && y.kind in (CSTParser.Tokens.STRING, CSTParser.Tokens.TRIPLE_STRING, CSTParser.Tokens.CMD, CSTParser.Tokens.TRIPLE_CMD)) : true)
                 push!(state.edits, Edit((n - i2) + 1:(n - i1), ""))
             end
