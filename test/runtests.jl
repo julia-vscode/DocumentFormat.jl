@@ -1,4 +1,4 @@
-using DocumentFormat: format, isformatted
+using DocumentFormat: format, isformatted, FormatOptions
 using FilePathsBase
 using Test
 
@@ -115,7 +115,15 @@ using Test
         @test format("func(a, b; c)") == "func(a, b; c)"
         @test format("func(  a, b; c)") == "func(a, b; c)"
         @test format("func(a  ,b; c)") == "func(a, b; c)"
-        @test format("func(a=1,b; c=1)") == "func(a = 1, b; c = 1)"
+        @test format("func(a=1,b; c=1)") == "func(a=1, b; c=1)"
+        @testset "kwarg spacing" begin
+            @test format("f(a=1)", FormatOptions(4, true, true, true, true, true, true, true, true, false, true, 0)) == "f(a=1)"
+            @test format("f(a = 1)", FormatOptions(4, true, true, true, true, true, true, true, true, false, true, 0)) == "f(a=1)"
+            @test format("f(a=1)", FormatOptions(4, true, true, true, true, true, true, true, true, false, true, 1)) == "f(a = 1)"
+            @test format("f(a = 1)", FormatOptions(4, true, true, true, true, true, true, true, true, false, true, 1)) == "f(a = 1)"
+            @test format("f(a = 1)", FormatOptions(4, true, true, true, true, true, true, true, true, false, true, 34)) == "f(a = 1)"
+            @test format("f(a =   1)", FormatOptions(4, true, true, true, true, true, true, true, true, false, true, 34)) == "f(a =   1)"
+        end
     end
 
     @testset "indents" begin
@@ -517,7 +525,7 @@ end"""
 """
 
         original_should = """
-function bar(x,  y   =  3)
+function bar(x,  y=3)
 end
 """
 
@@ -537,7 +545,7 @@ end
         end
 
     end
-    @testset "kw format" begin
+    @testset "keyword format" begin
         @test format("function  f end") == "function f end"
         @test format("function f end") == "function f end"
     end
