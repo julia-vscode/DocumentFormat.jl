@@ -5,7 +5,7 @@ import CSTParser.Tokenize.Tokens
 using CSTParser: typof, kindof, EXPR
 using FilePathsBase
 
-const default_options = (4, true, true, true, true, true, true, true, true, false, true, 0)
+const default_options = (4, true, true, true, true, true, true, true, true, false, true, :none)
 
 struct FormatOptions
     indent::Int
@@ -19,7 +19,7 @@ struct FormatOptions
     docs::Bool
     lineends::Bool
     keywords::Bool
-    kwarg::Int # Options arg (0 => no spacing around kw assignment, 1 => single space around kw assignment, anything else => off)
+    kwarg::Symbol # Options arg-> :none, :single, :off
 end
 FormatOptions() = FormatOptions(default_options...)
 

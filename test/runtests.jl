@@ -117,12 +117,12 @@ using Test
         @test format("func(a  ,b; c)") == "func(a, b; c)"
         @test format("func(a=1,b; c=1)") == "func(a=1, b; c=1)"
         @testset "kwarg spacing" begin
-            @test format("f(a=1)", FormatOptions(4, true, true, true, true, true, true, true, true, false, true, 0)) == "f(a=1)"
-            @test format("f(a = 1)", FormatOptions(4, true, true, true, true, true, true, true, true, false, true, 0)) == "f(a=1)"
-            @test format("f(a=1)", FormatOptions(4, true, true, true, true, true, true, true, true, false, true, 1)) == "f(a = 1)"
-            @test format("f(a = 1)", FormatOptions(4, true, true, true, true, true, true, true, true, false, true, 1)) == "f(a = 1)"
-            @test format("f(a = 1)", FormatOptions(4, true, true, true, true, true, true, true, true, false, true, 34)) == "f(a = 1)"
-            @test format("f(a =   1)", FormatOptions(4, true, true, true, true, true, true, true, true, false, true, 34)) == "f(a =   1)"
+            @test format("f(a=1)", FormatOptions(4, true, true, true, true, true, true, true, true, false, true, :none)) == "f(a=1)"
+            @test format("f(a = 1)", FormatOptions(4, true, true, true, true, true, true, true, true, false, true, :none)) == "f(a=1)"
+            @test format("f(a=1)", FormatOptions(4, true, true, true, true, true, true, true, true, false, true, :single)) == "f(a = 1)"
+            @test format("f(a = 1)", FormatOptions(4, true, true, true, true, true, true, true, true, false, true, :single)) == "f(a = 1)"
+            @test format("f(a = 1)", FormatOptions(4, true, true, true, true, true, true, true, true, false, true, :off)) == "f(a = 1)"
+            @test format("f(a =   1)", FormatOptions(4, true, true, true, true, true, true, true, true, false, true, :off)) == "f(a =   1)"
         end
     end
 
