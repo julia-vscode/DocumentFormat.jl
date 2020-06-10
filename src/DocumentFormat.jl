@@ -5,7 +5,7 @@ import CSTParser.Tokenize.Tokens
 using CSTParser: typof, kindof, EXPR
 using FilePathsBase
 
-const default_options = (4, true, true, true, true, true, true, true, true, false, true)
+const default_options = (4, true, true, true, true, true, true, true, true, false, true, "none")
 
 struct FormatOptions
     indent::Int
@@ -18,7 +18,8 @@ struct FormatOptions
     comments::Bool
     docs::Bool
     lineends::Bool
-    kw::Bool
+    keywords::Bool
+    kwarg::String # Options arg-> "none", "single", "off"
 end
 FormatOptions() = FormatOptions(default_options...)
 
@@ -75,7 +76,7 @@ function format(original_text::AbstractString, formatopts::FormatOptions = Forma
         state.offset = 0
         pass(x, state, doc_pass)
     end
-    if formatopts.kw
+    if formatopts.keywords
         state.offset = 0
         pass(x, state, kw_pass)
     end

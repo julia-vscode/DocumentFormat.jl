@@ -86,8 +86,13 @@ function call_pass(x, state)
             # space holder for splitting calls across lines
         end
     elseif typof(x) === CSTParser.Kw
-        ensure_single_space_after(x.args[1], state, state.offset)
-        ensure_single_space_after(x.args[2], state, state.offset + x.args[1].fullspan)
+        if state.opts.kwarg === "none"
+            ensure_no_space_after(x.args[1], state, state.offset)
+            ensure_no_space_after(x.args[2], state, state.offset + x.args[1].fullspan)
+        elseif state.opts.kwarg === "single"
+            ensure_exactly_single_space_after(x.args[1], state, state.offset)
+            ensure_exactly_single_space_after(x.args[2], state, state.offset + x.args[1].fullspan)
+        end
     end
 end
 
