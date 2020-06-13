@@ -549,4 +549,7 @@ end
         @test format("function  f end") == "function f end"
         @test format("function f end") == "function f end"
     end
+    @testset "anonymous function" begin
+        @test format("x->foo") == "x -> foo"
+    end
 end
