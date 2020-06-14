@@ -19,7 +19,7 @@ struct FormatOptions
     docs::Bool
     lineends::Bool
     keywords::Bool
-    kwarg::String # Options arg-> "none", "single", "off"
+    kwspacing::String # Options arg-> "none", "single", "off"
 end
 FormatOptions() = FormatOptions(default_options...)
 

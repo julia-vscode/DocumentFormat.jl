@@ -86,10 +86,10 @@ function call_pass(x, state)
             # space holder for splitting calls across lines
         end
     elseif typof(x) === CSTParser.Kw
-        if state.opts.kwarg === "none"
+        if state.opts.kwspacing === "none"
             ensure_no_space_after(x.args[1], state, state.offset)
             ensure_no_space_after(x.args[2], state, state.offset + x.args[1].fullspan)
-        elseif state.opts.kwarg === "single"
+        elseif state.opts.kwspacing === "single"
             ensure_exactly_single_space_after(x.args[1], state, state.offset)
             ensure_exactly_single_space_after(x.args[2], state, state.offset + x.args[1].fullspan)
         end
@@ -143,11 +143,11 @@ function doc_pass(x, state)
     return
     if typof(x) === CSTParser.MacroCall && typof(x.args[1]) === CSTParser.GlobalRefDoc
         # Align global docstring to:
-        #
+        # 
         # """
         # doc
         # """
-        #
+        # 
         # If the doc is single quoted i.e. "doc", they will be replaced with triple quotes.
         offset = state.offset + x.args[1].fullspan
         doc = x.args[2]
