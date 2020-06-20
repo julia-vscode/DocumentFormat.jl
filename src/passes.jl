@@ -1,6 +1,6 @@
 function operator_pass(x, state)
     if typof(x) === CSTParser.BinaryOpCall
-        if CSTParser.precedence(x.args[2]) in (8, 13, 14, 16) || x.args[2].fullspan == 0
+        if (CSTParser.precedence(x.args[2]) in (8, 13, 14, 16) && x.args[2].kind !== CSTParser.Tokens.ANON_FUNC) || x.args[2].fullspan == 0
             ensure_no_space_after(x.args[1], state, state.offset)
             ensure_no_space_after(x.args[2], state, state.offset + x.args[1].fullspan)
         else
