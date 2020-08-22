@@ -41,9 +41,9 @@ mutable struct State{T}
     lines::Vector{Tuple{Int,Int}}
 end
 
-function format(original_text::AbstractString, formatopts::FormatOptions = FormatOptions())
+function format(original_text::AbstractString, formatopts::FormatOptions=FormatOptions())
     text = deepcopy(original_text)
-    original_ast = CSTParser.remlineinfo!(Meta.parse(string("begin\n", text, "\nend"), raise = false))
+    original_ast = CSTParser.remlineinfo!(Meta.parse(string("begin\n", text, "\nend"), raise=false))
     if original_ast.head == :error
         @warn ("There was an error in the original ast, original text returned.")
         return text
@@ -84,7 +84,7 @@ function format(original_text::AbstractString, formatopts::FormatOptions = Forma
     if formatopts.lineends
         lineends_pass(text, x, state)
     end
-    sort!(state.edits, lt = (a, b)->first(a.loc) < first(b.loc), rev = true)
+    sort!(state.edits, lt=(a, b) -> first(a.loc) < first(b.loc), rev=true)
 
     for i = 1:length(state.edits)
         text = apply(text, state.edits[i])
@@ -92,7 +92,7 @@ function format(original_text::AbstractString, formatopts::FormatOptions = Forma
     if formatopts.indents
         text = indents(text, state.opts)
     end
-    new_ast = CSTParser.remlineinfo!(Meta.parse(string("begin\n", text, "\nend"), raise = false))
+    new_ast = CSTParser.remlineinfo!(Meta.parse(string("begin\n", text, "\nend"), raise=false))
     if new_ast.head == :error
         @warn ("There was an error in the formatted text, original returned.")
         return original_text
@@ -104,7 +104,7 @@ function format(original_text::AbstractString, formatopts::FormatOptions = Forma
     return text
 end
 
-function format(path::AbstractPath, formatopts::FormatOptions = FormatOptions())
+function format(path::AbstractPath, formatopts::FormatOptions=FormatOptions())
     if isfile(path)
         extension(path) != "jl" && error("Only .jl files can be formatted.")
 
@@ -124,14 +124,14 @@ function format(path::AbstractPath, formatopts::FormatOptions = FormatOptions())
     return nothing
 end
 
-function isformatted(text::AbstractString, formatopts::FormatOptions = FormatOptions())
+function isformatted(text::AbstractString, formatopts::FormatOptions=FormatOptions())
     original_text = text
     new_text = format(text, formatopts)
 
     return original_text == new_text
 end
 
-function isformatted(path::AbstractPath, formatopts::FormatOptions = FormatOptions())
+function isformatted(path::AbstractPath, formatopts::FormatOptions=FormatOptions())
     if isfile(path)
         extension(path) != "jl" && error("Only .jl files can be formatted.")
 
@@ -156,7 +156,7 @@ function isformatted(path::AbstractPath, formatopts::FormatOptions = FormatOptio
     return nothing
 end
 
-function pass(x, state, f = (x, state)->nothing)
+function pass(x, state, f=(x, state) -> nothing)
     f(x, state)
     if x.args isa Vector{EXPR}
         for a in x.args

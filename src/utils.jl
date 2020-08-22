@@ -40,7 +40,7 @@ function issameline(offset1, offset2, lines)
     line_of(offset1, lines) == line_of(offset2, lines)
 end
 
-function get_expr(x, offset, pos = 0)
+function get_expr(x, offset, pos=0)
     if pos > offset
         return nothing
     end
