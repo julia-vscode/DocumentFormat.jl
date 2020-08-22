@@ -244,7 +244,7 @@ function indents(text, opts)
 
     state = indent_pass(x, State(0, IndentState(0, []), opts, text, get_lines(text)))
 
-    sort!(state.edits.edits, lt = (a, b)->a[1] < b[1], rev = true)
+    sort!(state.edits.edits, lt=(a, b) -> a[1] < b[1], rev=true)
     for (l, d) in state.edits.edits
         if d > 0
             text = string(text[1:l], " "^d, text[l + 1:end])
