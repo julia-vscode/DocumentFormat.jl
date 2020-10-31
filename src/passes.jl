@@ -1,36 +1,36 @@
 function operator_pass(x, state)
-    if typof(x) === CSTParser.BinaryOpCall
-        if (CSTParser.precedence(x.args[2]) in (8, 13, 14, 16) && x.args[2].kind !== CSTParser.Tokens.ANON_FUNC) || x.args[2].fullspan == 0
-            ensure_no_space_after(x.args[1], state, state.offset)
-            ensure_no_space_after(x.args[2], state, state.offset + x.args[1].fullspan)
+    if CSTParser.isbinarycall(x) || (CSTParser.isbinarysyntax(x) && headof(x).fullspan > 0)
+        if (CSTParser.AllPrecs[valof(x[2])] in (CSTParser.ColonOp, CSTParser.PowerOp, CSTParser.DeclarationOp, CSTParser.DotOp) && valof(x[2]) != "->") || x[2].fullspan == 0
+            ensure_no_space_after(x[1], state, state.offset)
+            ensure_no_space_after(x[2], state, state.offset + x[1].fullspan)
         else
-            ensure_single_space_after(x.args[1], state, state.offset)
-            ensure_single_space_after(x.args[2], state, state.offset + x.args[1].fullspan)
+            ensure_single_space_after(x[1], state, state.offset)
+            ensure_single_space_after(x[2], state, state.offset + x[1].fullspan)
         end
-    elseif typof(x) === CSTParser.WhereOpCall
-        ensure_single_space_after(x.args[2], state, state.offset + x.args[1].fullspan)
-        n = length(x.args)
-        offset = state.offset + x.args[1].fullspan + x.args[2].fullspan
+    elseif CSTParser.iswhere(x)
+        ensure_single_space_after(x[2], state, state.offset + x[1].fullspan)
+        n = length(x)
+        offset = state.offset + x[1].fullspan + x[2].fullspan
         for i = 3:n
-            a = x.args[i]
+            a = x[i]
             if i != n
                 ensure_no_space_after(a, state, offset)
             end
             offset += a.fullspan
         end
-    elseif typof(x) === CSTParser.ColonOpCall
+    elseif CSTParser.iscall(x) && CSTParser.isoperator(x[2]) && valof(x[2]) == ":"
         offset = state.offset
-        n = length(x.args)
-        for (i, a) in enumerate(x.args)
+        n = length(x)
+        for (i, a) in enumerate(x)
             if i != n
                 ensure_no_space_after(a, state, offset)
             end
             offset += a.fullspan
         end
-    elseif typof(x) === CSTParser.ChainOpCall || typof(x) == CSTParser.Comparison
+    elseif (CSTParser.isbinarycall(x) && valof(x.args[1]) in ("+", "*") && length(x) > 3) || headof(x) == :comparison
         offset = state.offset
-        n = length(x.args)
-        for (i, a) in enumerate(x.args)
+        n = length(x)
+        for (i, a) in enumerate(x)
             if i != n
                 ensure_single_space_after(a, state, offset)
             end
@@ -40,14 +40,14 @@ function operator_pass(x, state)
 end
 
 function tuple_pass(x, state)
-    if typof(x) === CSTParser.TupleH
+    if headof(x) === :tuple
         offset = state.offset
         n = length(x)
         for (i, a) in enumerate(x)
             i == n && continue
-            if typof(a) === CSTParser.PUNCTUATION && kindof(a) === Tokens.COMMA && !(typof(x.args[i + 1]) === CSTParser.PUNCTUATION)
+            if headof(a) === :COMMA && !(CSTParser.ispunctuation(x[i + 1]))
                 ensure_single_space_after(a, state, offset)
-            elseif !(typof(x.args[i + 1]) === CSTParser.Parameters)
+            elseif !(headof(x[i + 1]) === :parameters)
                 ensure_no_space_after(a, state, offset)
             end
             offset += a.fullspan
@@ -56,7 +56,7 @@ function tuple_pass(x, state)
 end
 
 function curly_pass(x, state)
-    if typof(x) === CSTParser.Curly
+    if headof(x) === :curly
         offset = state.offset
         n = length(x)
         for (i, a) in enumerate(x)
@@ -69,15 +69,15 @@ function curly_pass(x, state)
 end
 
 function call_pass(x, state)
-    if typof(x) === CSTParser.Call
+    if headof(x) === :call && !(CSTParser.isbinarycall(x) || CSTParser.ischainedcall(x))
         if issameline(state.offset, state.offset + x.span, state.lines)
-            offset = state.offset + x.args[1].fullspan
+            offset = state.offset + x[1].fullspan
             n = length(x)
             for (i, a) in enumerate(x)
                 i == 1 && continue
-                if typof(a) === CSTParser.PUNCTUATION && kindof(a) === Tokens.COMMA
+                if headof(a) === :COMMA
                     ensure_single_space_after(a, state, offset)
-                elseif i != n && !(typof(x.args[i + 1]) === CSTParser.Parameters)
+                elseif i != n && !(headof(x[i + 1]) === :parameters)
                     ensure_no_space_after(a, state, offset)
                 end
                 offset += a.fullspan
@@ -85,27 +85,27 @@ function call_pass(x, state)
         else
             # space holder for splitting calls across lines
         end
-    elseif typof(x) === CSTParser.Kw
+    elseif headof(x) === :kw
         if state.opts.kwarg === "none"
-            ensure_no_space_after(x.args[1], state, state.offset)
-            ensure_no_space_after(x.args[2], state, state.offset + x.args[1].fullspan)
+            ensure_no_space_after(x[1], state, state.offset)
+            ensure_no_space_after(x[2], state, state.offset + x[1].fullspan)
         elseif state.opts.kwarg === "single"
-            ensure_exactly_single_space_after(x.args[1], state, state.offset)
-            ensure_exactly_single_space_after(x.args[2], state, state.offset + x.args[1].fullspan)
+            ensure_exactly_single_space_after(x[1], state, state.offset)
+            ensure_exactly_single_space_after(x[2], state, state.offset + x[1].fullspan)
         end
     end
 end
 
 function forloop_pass(x, state)
-    if typof(x) === CSTParser.For
-        offset = state.offset + x.args[1].fullspan
-        for a in x.args[2]
+    if headof(x) === :for
+        offset = state.offset + x[1].fullspan
+        for a in x[2]
             # convert iter = I into iter in I
-            if typof(a) === CSTParser.BinaryOpCall && CSTParser.is_eq(a.args[2])
-                offset += a.args[1].fullspan
+            if CSTParser.isassignment(a)
+                offset += a[1].fullspan
                 push!(state.edits, Edit(offset + 1:offset + 2, "in "))
-                offset += a.args[2].fullspan
-                offset += a.args[3].fullspan
+                offset += a[2].fullspan
+                offset += a[3].fullspan
             else
                 offset += a.fullspan
             end
@@ -115,7 +115,7 @@ end
 
 # TODO: move this to CSTParser?
 function str_value(x)
-    if typof(x) === CSTParser.PUNCTUATION
+    if CSTParser.ispunctuation(x)
         kindof(x) == Tokens.LPAREN && return "("
         kindof(x) == Tokens.LBRACE && return "{"
         kindof(x) == Tokens.LSQUARE && return "["
@@ -127,7 +127,7 @@ function str_value(x)
         kindof(x) == Tokens.AT_SIGN && return "@"
         kindof(x) == Tokens.DOT && return "."
         return ""
-    elseif typof(x) === CSTParser.IDENTIFIER || typof(x) === CSTParser.LITERAL || typof(x) === CSTParser.OPERATOR || typof(x) === CSTParser.KEYWORD
+    elseif headof(x) === :IDENTIFIER || CSTParser.isliteral(x) || CSTParser.isoperator(x) || CSTParser.iskeyword(x)
         return CSTParser.str_value(x)
     else
         s = ""
@@ -141,7 +141,7 @@ end
 
 function doc_pass(x, state)
     return
-    if typof(x) === CSTParser.MacroCall && typof(x.args[1]) === CSTParser.GlobalRefDoc
+    if headof(x) === :macrocall && headof(x[1]) === :globalrefdoc
         # Align global docstring to:
         #
         # """
@@ -149,8 +149,8 @@ function doc_pass(x, state)
         # """
         #
         # If the doc is single quoted i.e. "doc", they will be replaced with triple quotes.
-        offset = state.offset + x.args[1].fullspan
-        doc = x.args[2]
+        offset = state.offset + x[1].fullspan
+        doc = x[2]
 
         val = str_value(doc)
 
@@ -169,28 +169,28 @@ function doc_pass(x, state)
 end
 
 function kw_pass(x, state)
-    if typof(x) === CSTParser.KEYWORD &&
-        kindof(x) in (CSTParser.Tokens.ABSTRACT,
-                      CSTParser.Tokens.BAREMODULE,
-                      CSTParser.Tokens.CONST,
-                      CSTParser.Tokens.DO,
-                      CSTParser.Tokens.ELSEIF,
-                      CSTParser.Tokens.EXPORT,
-                      CSTParser.Tokens.FOR,
-                      CSTParser.Tokens.FUNCTION,
-                      CSTParser.Tokens.GLOBAL,
-                      CSTParser.Tokens.IF,
-                      CSTParser.Tokens.IMPORT,
-                      CSTParser.Tokens.LOCAL,
-                      CSTParser.Tokens.MACRO,
-                      CSTParser.Tokens.MODULE,
-                      CSTParser.Tokens.MUTABLE,
-                      CSTParser.Tokens.OUTER,
-                      CSTParser.Tokens.PRIMITIVE,
-                      CSTParser.Tokens.STRUCT,
-                      CSTParser.Tokens.TYPE,
-                      CSTParser.Tokens.USING,
-                      CSTParser.Tokens.WHILE)
+    if CSTParser.iskeyword(x) &&
+        headof(x) in (:ABSTRACT,
+                      :BAREMODULE,
+                      :CONST,
+                      :DO,
+                      :ELSEIF,
+                      :EXPORT,
+                      :FOR,
+                      :FUNCTION,
+                      :GLOBAL,
+                      :IF,
+                      :IMPORT,
+                      :LOCAL,
+                      :MACRO,
+                      :MODULE,
+                      :MUTABLE,
+                      :OUTER,
+                      :PRIMITIVE,
+                      :STRUCT,
+                      :TYPE,
+                      :USING,
+                      :WHILE)
         ensure_exactly_single_space_after(x, state, state.offset)
     end
 end
@@ -244,7 +244,7 @@ function lineends_pass(text, x, state)
                 pc = read(io, UInt8)
             end
             if i1 != i2 && (y = get_expr(x, n - i1); y isa CSTParser.EXPR ?
-                !(y.typ == CSTParser.LITERAL && y.kind in (CSTParser.Tokens.STRING, CSTParser.Tokens.TRIPLE_STRING, CSTParser.Tokens.CMD, CSTParser.Tokens.TRIPLE_CMD)) : true)
+                !(headof(y) in (:STRING, :TRIPLE_STRING, :CMD, :TRIPLE_CMD)) : true)
                 push!(state.edits, Edit((n - i2) + 1:(n - i1), ""))
             end
         end

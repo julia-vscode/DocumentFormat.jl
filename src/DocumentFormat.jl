@@ -2,7 +2,7 @@ module DocumentFormat
 using CSTParser
 using CSTParser.Tokenize
 import CSTParser.Tokenize.Tokens
-using CSTParser: typof, kindof, EXPR
+using CSTParser: headof, valof, EXPR
 using FilePathsBase
 
 const default_options = (4, true, true, true, true, true, true, true, true, false, true, "none")
@@ -158,8 +158,8 @@ end
 
 function pass(x, state, f=(x, state) -> nothing)
     f(x, state)
-    if x.args isa Vector{EXPR}
-        for a in x.args
+    if length(x) > 0
+        for a in x
             pass(a, state, f)
         end
     else
