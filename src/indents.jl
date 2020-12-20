@@ -228,7 +228,7 @@ function indent_pass(x, state)
             state.offset += x[3].fullspan
         end
 
-    elseif headof(x) in (:IDENTIFIER, :OPERATOR, :KEYWORD) || CSTParser.isliteral(x) || CSTParser.ispunctuation(x)
+    elseif x.args === nothing
         state.offset += x.fullspan
     else
         if length(x) > 0

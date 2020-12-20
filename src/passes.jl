@@ -27,7 +27,7 @@ function operator_pass(x, state)
             end
             offset += a.fullspan
         end
-    elseif (CSTParser.isbinarycall(x) && valof(x.args[1]) in ("+", "*") && length(x) > 3) || headof(x) == :comparison
+    elseif (headof(x) === :call && valof(x.args[1]) in ("+", "*") && length(x) > 3) || headof(x) == :comparison
         offset = state.offset
         n = length(x)
         for (i, a) in enumerate(x)
@@ -69,7 +69,8 @@ function curly_pass(x, state)
 end
 
 function call_pass(x, state)
-    if headof(x) === :call && !(CSTParser.isbinarycall(x) || CSTParser.ischainedcall(x))
+    if headof(x) === :call && !(CSTParser.isbinarycall(x) || CSTParser.ischainedcall(x) || (CSTParser.isoperator(x.args[1]) && valof(x.args[1]) == ":"))
+        CSTParser.iscolon
         if issameline(state.offset, state.offset + x.span, state.lines)
             offset = state.offset + x[1].fullspan
             n = length(x)
@@ -101,7 +102,7 @@ function forloop_pass(x, state)
         offset = state.offset + x[1].fullspan
         for a in x[2]
             # convert iter = I into iter in I
-            if CSTParser.isassignment(a)
+            if CSTParser.isassignment(a) && (a.trivia === nothing || isempty(a.trivia))
                 offset += a[1].fullspan
                 push!(state.edits, Edit(offset + 1:offset + 2, "in "))
                 offset += a[2].fullspan
