@@ -117,16 +117,16 @@ end
 # TODO: move this to CSTParser?
 function str_value(x)
     if CSTParser.ispunctuation(x)
-        kindof(x) == Tokens.LPAREN && return "("
-        kindof(x) == Tokens.LBRACE && return "{"
-        kindof(x) == Tokens.LSQUARE && return "["
-        kindof(x) == Tokens.RPAREN && return ")"
-        kindof(x) == Tokens.RBRACE && return "}"
-        kindof(x) == Tokens.RSQUARE && return "]"
-        kindof(x) == Tokens.COMMA && return ","
-        kindof(x) == Tokens.SEMICOLON && return ";"
-        kindof(x) == Tokens.AT_SIGN && return "@"
-        kindof(x) == Tokens.DOT && return "."
+        headof(x) === :LPAREN && return "("
+        headof(x) === :LBRACE && return "{"
+        headof(x) === :LSQUARE && return "["
+        headof(x) === :RPAREN && return ")"
+        headof(x) === :RBRACE && return "}"
+        headof(x) === :RSQUARE && return "]"
+        headof(x) === :COMMA && return ","
+        headof(x) === :SEMICOLON && return ";"
+        headof(x) === :AT_SIGN && return "@"
+        headof(x) === :DOT && return "."
         return ""
     elseif headof(x) === :IDENTIFIER || CSTParser.isliteral(x) || CSTParser.isoperator(x) || CSTParser.iskeyword(x)
         return CSTParser.str_value(x)

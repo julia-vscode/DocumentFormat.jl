@@ -88,7 +88,7 @@ function indent_pass(x, state)
                 if s == "" && i != length(doc_strs)
                     state.offset += 1
                 else
-                    a = CSTParser.mLITERAL(length(s) + 1, length(s), String(s), Tokens.STRING)
+                    a = EXPR(:STRING, length(s) + 1, length(s), String(s))
                     check_indent(a, state)
                     indent_pass(a, state)
                 end
