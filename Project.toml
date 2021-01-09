@@ -3,18 +3,18 @@ uuid = "ffa9a821-9c82-50df-894e-fbcef3ed31cd"
 version = "3.2.1-DEV"
 
 [deps]
-FilePathsBase = "48062228-2e41-5def-b9a4-89aafe57970f"
 CSTParser = "00ebfdb7-1f24-5e51-bd34-a7502290713f"
+FilePathsBase = "48062228-2e41-5def-b9a4-89aafe57970f"
 Tokenize = "0796e94c-ce3b-5d07-9a54-7f471281c624"
+
+[compat]
+CSTParser = "1, 2, 3.0"
+FilePathsBase = "0.9"
+Tokenize = "0.5.6"
+julia = "1"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-
-[compat]
-julia = "1"
-FilePathsBase = "0.9"
-CSTParser = "1, 2"
-Tokenize = "0.5.6"
 
 [targets]
 test = ["Test"]
