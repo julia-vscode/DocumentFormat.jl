@@ -203,6 +203,11 @@ end"""
 
         @test format("""
     map(args) do x
+        y = 20
+        return x * y
+        end""") == str
+        @test format("""
+    map(args) do x
       y = 20
                         return x * y
         end""") == str
