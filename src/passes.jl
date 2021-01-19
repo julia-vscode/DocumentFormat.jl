@@ -45,10 +45,14 @@ function tuple_pass(x, state)
         n = length(x)
         for (i, a) in enumerate(x)
             i == n && continue
-            if headof(a) === :COMMA && !(CSTParser.ispunctuation(x[i + 1]))
-                ensure_single_space_after(a, state, offset)
-            elseif !(headof(x[i + 1]) === :parameters)
-                ensure_no_space_after(a, state, offset)
+            wsrange = offset + a.span + 1:offset + a.fullspan
+            ws = state.text[wsrange]
+            if all(in((' ', '\t')), ws)
+                if headof(a) === :COMMA && !(CSTParser.ispunctuation(x[i + 1]))
+                    ensure_single_space_after(a, state, offset)
+                elseif !(headof(x[i + 1]) === :parameters)
+                    ensure_no_space_after(a, state, offset)
+                end
             end
             offset += a.fullspan
         end
