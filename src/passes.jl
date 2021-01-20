@@ -45,7 +45,7 @@ function tuple_pass(x, state)
         n = length(x)
         for (i, a) in enumerate(x)
             i == n && continue
-            wsrange = offset + a.span + 1:offset + a.fullspan
+            wsrange = nextind(state.text, offset + a.span):offset + a.fullspan
             ws = state.text[wsrange]
             if all(in((' ', '\t')), ws)
                 if headof(a) === :COMMA && !(CSTParser.ispunctuation(x[i + 1]))
