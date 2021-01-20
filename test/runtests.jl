@@ -27,6 +27,9 @@ using Test
         @test format("( π, 汉)") == "(π, 汉)"
         @test format("(π, 汉 )") == "(π, 汉)"
         @test format("(π, 汉 )") == "(π, 汉)"
+        @test format("(π, 汉 )") == "(π, 汉)"
+        @test format("(1, #= comment =# 3 )") == "(1, #= comment =# 3)"
+        @test format("(\n# comment\n1, \n# comment \n3\n# comment\n)") == "(\n# comment\n1, \n# comment \n3\n# comment\n)"
     end
     @testset "curly" begin
         @test format("X{a,b}") == "X{a,b}"
