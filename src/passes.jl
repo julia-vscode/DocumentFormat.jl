@@ -1,6 +1,7 @@
 function operator_pass(x, state)
     if CSTParser.isbinarycall(x) || (CSTParser.isbinarysyntax(x) && headof(x).fullspan > 0)
-        if (CSTParser.AllPrecs[valof(x[2])] in (CSTParser.ColonOp, CSTParser.PowerOp, CSTParser.DeclarationOp, CSTParser.DotOp) && valof(x[2]) != "->") || x[2].fullspan == 0
+        opprec = CSTParser.get_prec(CSTParser.isdotted(x[2]) ? valof(x[2])[2:end] : valof(x[2]))
+        if (opprec in (CSTParser.ColonOp, CSTParser.PowerOp, CSTParser.DeclarationOp, CSTParser.DotOp) && valof(x[2]) != "->") || x[2].fullspan == 0
             ensure_no_space_after(x[1], state, state.offset)
             ensure_no_space_after(x[2], state, state.offset + x[1].fullspan)
         else
