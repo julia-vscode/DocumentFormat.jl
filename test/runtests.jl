@@ -560,4 +560,11 @@ end
     @testset "anonymous function" begin
         @test format("x->foo") == "x -> foo"
     end
+
+    @testset "globaldocref" begin
+        @test format("\"\"\"\ndoc\n\"\"\"\nf") == "\"\"\"\ndoc\n\"\"\"\nf" # no format changes, this is just to hit the correct code.
+    end
+    @testset "dot ops" begin
+        @test format("a .+b") == "a .+ b" 
+    end
 end
