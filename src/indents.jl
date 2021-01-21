@@ -78,9 +78,9 @@ function indent_pass(x, state)
     elseif headof(x) === :macrocall
         if headof(x[1]) === :globalrefdoc
             state.offset += x[1].fullspan
-            doc = x[2]
+            doc = x.args[3]
             doc_strs = split(str_value(doc), "\n")
-            state.offset += 4
+            state.offset += 4 
             for (i, s) in enumerate(doc_strs)
                 # Skip indenting lines of "".
                 # The final "" is associated with identing the
@@ -95,8 +95,8 @@ function indent_pass(x, state)
             end
             state.offset += 3
 
-            check_indent(x[3], state)
-            indent_pass(x[3], state)
+            check_indent(x.args[4], state)
+            indent_pass(x.args[4], state)
         elseif length(x) > 0
             for a in x
                 indent_pass(a, state)
