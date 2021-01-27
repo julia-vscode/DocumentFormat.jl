@@ -169,6 +169,7 @@ function indent_pass(x, state)
                 state.edits.indent -= 1
                 check_indent(x[4], state)
                 state.offset += x[4].fullspan
+            end
             if length(x) == 5
                 # state.edits.indent += 1
                 check_indent(x[5], state)
