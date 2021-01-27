@@ -567,4 +567,14 @@ end
     @testset "dot ops" begin
         @test format("a .+b") == "a .+ b" 
     end
+
+    @testset ":if out of bounds" begin
+        format("""
+        if c
+        ex
+        elseif b
+            ex
+        end
+        """)
+    end
 end
