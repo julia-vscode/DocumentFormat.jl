@@ -179,7 +179,6 @@ function kw_pass(x, state)
         headof(x) in (:ABSTRACT,
                       :BAREMODULE,
                       :CONST,
-                      :DO,
                       :ELSEIF,
                       :EXPORT,
                       :FOR,
@@ -196,7 +195,7 @@ function kw_pass(x, state)
                       :STRUCT,
                       :TYPE,
                       :USING,
-                      :WHILE)
+                      :WHILE) || (headof(x) === :DO && x.args[2].args[1].fullspan > 0)
         ensure_exactly_single_space_after(x, state, state.offset)
     end
 end
