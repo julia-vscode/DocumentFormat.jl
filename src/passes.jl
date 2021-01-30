@@ -195,7 +195,7 @@ function kw_pass(x, state)
                       :STRUCT,
                       :TYPE,
                       :USING,
-                      :WHILE) || (headof(x) === :DO && x.args[2].args[1].fullspan > 0)
+                      :WHILE) || (headof(x) === :DO && x.args !== nothing && length(x.args) > 1 && x.args[2].args !== nothing && x.args[2].args[1].fullspan > 0)
         ensure_exactly_single_space_after(x, state, state.offset)
     end
 end
