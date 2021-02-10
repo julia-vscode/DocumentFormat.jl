@@ -20,6 +20,9 @@ struct FormatOptions
     lineends::Bool
     keywords::Bool
     kwarg::String # Options arg-> "none", "single", "off"
+
+    FormatOptions(indent::Int, indents::Bool, ops::Bool, tuples::Bool, curly::Bool, calls::Bool, iterOps::Bool, comments::Bool, docs::Bool, lineends::Bool, keywords::Bool, kwarg::String) =
+        new(indent, indents, ops, tuples, curly, calls, iterOps, comments, docs, lineends, keywords, kwarg)
 end
 FormatOptions() = FormatOptions(default_options...)
 
