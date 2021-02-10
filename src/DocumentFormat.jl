@@ -25,7 +25,7 @@ FormatOptions() = FormatOptions(default_options...)
 
 # Provide sane default constructor for applications who don't know option specifics.
 # Any nothing argument is given a sane default value.
-FormatOptions(options::Vararg{Union{Int,Bool,Nothing},length(default_options)}) =
+FormatOptions(options::Vararg{Any,length(default_options)}) =
     FormatOptions(something.(options, default_options)...)
 
 struct Edit{T}
