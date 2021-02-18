@@ -21,15 +21,16 @@ struct FormatOptions
     keywords::Bool
     kwarg::String # Options arg-> "none", "single", "off"
 
-    FormatOptions(indent::Int, indents::Bool, ops::Bool, tuples::Bool, curly::Bool, calls::Bool, iterOps::Bool, comments::Bool, docs::Bool, lineends::Bool, keywords::Bool, kwarg::String) =
-        new(indent, indents, ops, tuples, curly, calls, iterOps, comments, docs, lineends, keywords, kwarg)
+    # Provide sane default constructor for applications who don't know option specifics.
+    # Any nothing argument is given a sane default value.
+    function FormatOptions(options...)
+        if length(options) == 0
+            new(default_options...)
+        else
+            new(something.(options, default_options)...)
+        end
+    end
 end
-FormatOptions() = FormatOptions(default_options...)
-
-# Provide sane default constructor for applications who don't know option specifics.
-# Any nothing argument is given a sane default value.
-FormatOptions(options::Vararg{Any,length(default_options)}) =
-    FormatOptions(something.(options, default_options)...)
 
 struct Edit{T}
     loc::T
