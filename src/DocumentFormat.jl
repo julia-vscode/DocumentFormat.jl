@@ -20,16 +20,39 @@ struct FormatOptions
     lineends::Bool
     keywords::Bool
     kwarg::String # Options arg-> "none", "single", "off"
+end
 
-    # Provide sane default constructor for applications who don't know option specifics.
-    # Any nothing argument is given a sane default value.
-    function FormatOptions(options...)
-        if length(options) == 0
-            new(default_options...)
-        else
-            new(something.(options, default_options)...)
-        end
-    end
+# Provide sane default constructor for applications who don't know option specifics.
+# Any nothing argument is given a sane default value.
+FormatOptions() = FormatOptions(default_options...)
+function FormatOptions(
+        indent::Union{Nothing,Int},
+        indents::Union{Nothing,Bool},
+        ops::Union{Nothing,Bool},
+        tuples::Union{Nothing,Bool},
+        curly::Union{Nothing,Bool},
+        calls::Union{Nothing,Bool},
+        iterOps::Union{Nothing,Bool},
+        comments::Union{Nothing,Bool},
+        docs::Union{Nothing,Bool},
+        lineends::Union{Nothing,Bool},
+        keywords::Union{Nothing,Bool},
+        kwarg::Union{Nothing,String}
+    )
+    FormatOptions(
+        something(indent, default_options[1]),
+        something(indents, default_options[2]),
+        something(ops, default_options[3]),
+        something(tuples, default_options[4]),
+        something(curly, default_options[5]),
+        something(calls, default_options[6]),
+        something(iterOps, default_options[7]),
+        something(comments, default_options[8]),
+        something(docs, default_options[9]),
+        something(lineends, default_options[10]),
+        something(keywords, default_options[11]),
+        something(kwarg, default_options[12])
+    )
 end
 
 struct Edit{T}
