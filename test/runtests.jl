@@ -577,4 +577,12 @@ end
         end
         """)
     end
+
+    @testset "constructor" begin
+        default_opts = FormatOptions(4, true, true, true, true, true, true, true, true, false, true, "none")
+        @test FormatOptions(4, true, true, true, true, true, true, true, true, false, true, nothing) == default_opts
+        @test FormatOptions(nothing, true, true, true, true, nothing, true, true, true, false, true, nothing) == default_opts
+        @test_throws MethodError FormatOptions(nothing, true, true, true, true, nothing, true, true, true, false, true, missing)
+        @test_throws MethodError FormatOptions(nothing, true, true, true, true, nothing, true, true, true, false, true, 8)
+    end
 end
