@@ -8,7 +8,7 @@ using FilePathsBase
 const default_options = (4, true, true, true, true, true, true, true, true, false, true, "none")
 
 struct FormatOptions
-    indent::Int
+    indent::Integer
     indents::Bool
     ops::Bool
     tuples::Bool
@@ -26,7 +26,7 @@ end
 # Any nothing argument is given a sane default value.
 FormatOptions() = FormatOptions(default_options...)
 function FormatOptions(
-        indent::Union{Nothing,Int},
+        indent::Union{Nothing,Integer},
         indents::Union{Nothing,Bool},
         ops::Union{Nothing,Bool},
         tuples::Union{Nothing,Bool},
