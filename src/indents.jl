@@ -28,7 +28,7 @@ function indent_pass(x, state)
         state.offset += x[3].fullspan
     elseif headof(x) == :struct
         state.offset += x[1].fullspan + x.args[2].fullspan
-        if length(x.trivia) > 2 #mutable
+        if length(x.trivia) > 2 # mutable
             state.offset += x.trivia[2].fullspan
         end
         if headof(x.args[3]) === :block && length(x.args[3]) > 0

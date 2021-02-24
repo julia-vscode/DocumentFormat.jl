@@ -4,8 +4,8 @@ using Test
 
 @testset "DocumentFormat" begin
     @testset "basic" begin
-        @test format("a") == "a"
-    end
+    @test format("a") == "a"
+end
     @testset "tuples" begin
         @test format("a,b") == "a, b"
         @test format("a ,b") == "a, b"
@@ -46,8 +46,8 @@ using Test
         @test format("X{π,汉 }") == "X{π,汉}"
     end
     @testset "unary ops" begin
-        @test_broken format("! x") == "!x"
-    end
+    @test_broken format("! x") == "!x"
+end
     @testset "binary ops" begin
         @test format("a+b*c") == "a + b * c"
         @test format("a +b*c") == "a + b * c"
@@ -130,7 +130,7 @@ using Test
     end
 
     @testset "indents" begin
-        @testset "begin" begin
+    @testset "begin" begin
             str = """
 begin
     arg
@@ -176,7 +176,7 @@ end"""
                         end
                 end""") == str
         end
-    end
+end
 
     @testset "quote" begin
         str = """
@@ -542,15 +542,15 @@ end
         @test isformatted(original_should) == true
 
         mktempdir() do temp_dir
-            temp_dir = Path(temp_dir)
-            write(joinpath(temp_dir, "original.jl"), original)
+    temp_dir = Path(temp_dir)
+    write(joinpath(temp_dir, "original.jl"), original)
 
-            @test isformatted(joinpath(temp_dir, "original.jl")) == false
-            @test isformatted(temp_dir) == false
+    @test isformatted(joinpath(temp_dir, "original.jl")) == false
+    @test isformatted(temp_dir) == false
 
-            format(temp_dir)
-            @test isformatted(temp_dir) == true
-        end
+    format(temp_dir)
+    @test isformatted(temp_dir) == true
+end
 
     end
     @testset "keyword format" begin
@@ -558,25 +558,25 @@ end
         @test format("function f end") == "function f end"
     end
     @testset "anonymous function" begin
-        @test format("x->foo") == "x -> foo"
-    end
+    @test format("x->foo") == "x -> foo"
+end
 
     @testset "globaldocref" begin
-        @test format("\"\"\"\ndoc\n\"\"\"\nf") == "\"\"\"\ndoc\n\"\"\"\nf" # no format changes, this is just to hit the correct code.
-    end
+    @test format("\"\"\"\ndoc\n\"\"\"\nf") == "\"\"\"\ndoc\n\"\"\"\nf" # no format changes, this is just to hit the correct code.
+end
     @testset "dot ops" begin
-        @test format("a .+b") == "a .+ b" 
-    end
+    @test format("a .+b") == "a .+ b" 
+end
 
     @testset ":if out of bounds" begin
-        format("""
+    format("""
         if c
         ex
         elseif b
             ex
         end
         """)
-    end
+end
 
     @testset "constructor" begin
         default_opts = FormatOptions(4, true, true, true, true, true, true, true, true, false, true, "none")
