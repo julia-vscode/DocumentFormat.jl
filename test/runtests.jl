@@ -585,4 +585,17 @@ end
         @test_throws MethodError FormatOptions(nothing, true, true, true, true, nothing, true, true, true, false, true, missing)
         @test_throws MethodError FormatOptions(nothing, true, true, true, true, nothing, true, true, true, false, true, 8)
     end
+
+    @testset ":begin indents" begin
+        s = """
+        begin
+            for i in 1:10
+                println(i)
+            end
+        
+            hello()
+        end"""
+        
+        format(s) == s
+    end
 end

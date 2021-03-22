@@ -13,7 +13,7 @@ function indent_pass(x, state)
                 indent_pass(a, state)
             end
         end
-    elseif length(x) == 3 && (headof(x) === :block && headof(x[1]) == :BEGIN) || (headof(x) === :quote && headof(x[1]) === :QUOTE)
+    elseif (headof(x) === :block && headof(x[1]) == :BEGIN) || (headof(x) === :quote && headof(x[1]) === :QUOTE)
         state.offset += x[1].fullspan
         state.edits.indent += 1
         if length(x) > 2
