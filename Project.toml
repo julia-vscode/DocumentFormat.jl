@@ -1,6 +1,6 @@
 name = "DocumentFormat"
 uuid = "ffa9a821-9c82-50df-894e-fbcef3ed31cd"
-version = "3.2.4-DEV"
+version = "3.2.4"
 
 [deps]
 FilePathsBase = "48062228-2e41-5def-b9a4-89aafe57970f"
