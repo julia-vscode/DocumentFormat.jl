@@ -28,7 +28,7 @@ end
 
 function isformatted(path::FilePathsBase.AbstractPath)
     if isdir(path)
-        return JuliaFormatter.format(path; overwrite = false, default_juliaformatter_config()...)
+        return JuliaFormatter.format(path; overwrite=false, default_juliaformatter_config()...)
     else
         error("Invalid path.")
     end
