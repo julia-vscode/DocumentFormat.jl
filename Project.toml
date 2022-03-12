@@ -12,7 +12,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 [compat]
 julia = "1"
 FilePathsBase = "0.9"
-JuliaFormatter = "0.22"
+JuliaFormatter = "0.22.7"
 
 [targets]
 test = ["Test"]
