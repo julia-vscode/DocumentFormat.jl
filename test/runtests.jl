@@ -492,7 +492,7 @@ end"""
         20
     end""") == str
 
-    # tests indentation and correctly formatting a docstring with escapes
+        # tests indentation and correctly formatting a docstring with escapes
         str = """
        begin
            \"""
@@ -565,7 +565,7 @@ end
         @test format("\"\"\"\ndoc\n\"\"\"\nf") == "\"\"\"\ndoc\n\"\"\"\nf" # no format changes, this is just to hit the correct code.
     end
     @testset "dot ops" begin
-        @test format("a .+b") == "a .+ b" 
+        @test format("a .+b") == "a .+ b"
     end
 
     @testset ":if out of bounds" begin
@@ -592,10 +592,10 @@ end
             for i in 1:10
                 println(i)
             end
-        
+
             hello()
         end"""
-        
+
         format(s) == s
     end
 end
